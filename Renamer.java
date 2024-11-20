@@ -5,7 +5,7 @@ import java.io.FileReader;
 import java.util.Arrays;
 import java.util.Stack;
 
-public class RegisterAllocator {
+public class Renamer {
     // global variables here
     public static int prCt = 0;
     public static boolean RENAME = false;
