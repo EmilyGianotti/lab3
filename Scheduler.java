@@ -10,12 +10,13 @@ import java.util.HashMap;
 public class Scheduler {
     public static OpList internalOpList;
     public static InternalRep DGToIR[];
+    public static Integer latencies[] = {6, 1, 6, 1, 1, 3, 1, 1, 1, 1};
 
     public static void main(String[] args) throws Exception {
         int i = 0;
         String filename = "";
         if (args.length == 0) { // no filename provided
-            System.err.println("ERROR: No flag or register count + filename provided.");
+            System.err.println("ERROR: No flag or filename provided.");
             System.out.println("COMP 412, Instruction Scheduling (lab 3)\n" + //
                                 "Command Syntax:\n" + //
                                 "        schedule filename [-h]\n" + //
@@ -84,7 +85,7 @@ public class Scheduler {
         int line = 0;
         int defLine = -1;
         InternalRep defOp = new InternalRep();
-        Node defNode = new Node();
+        Node defNode;
         // op is operation, o is node
         while (current != null) {
             // at each operation op
@@ -102,12 +103,13 @@ public class Scheduler {
                 int useOne = current.getOperand1()[1];
                 if (useOne != -1) {
                     if (useOne != -1) {
-                        // add an edge from o to the node in M(VRj)
+                        // add an edge from o use to the def node in M(VRj)
                         defOp = M[useOne];
-                        defLine = M[useOne].getLine();
-                        //defNode = 
-                        //currentEdges.put(defLine, node);
-                        
+                        defLine = defOp.getLine();
+                        defNode = new Node(defOp.getOperation(), latencies[defOp.getOperation()], 1);
+                        currentEdges.put(defLine, defNode);
+                        // add reverse edge from def node to o use
+                        DG.get(defLine).put(line, new Node(current.getOperation(), latencies[current.getOperation()], -1));
                     }
                 }
 
@@ -116,10 +118,27 @@ public class Scheduler {
                     if (useTwo != -1) {
                         // add an edge from o to the node in M(VRj)
                         defOp = M[useTwo];
-                        defLine = M[useTwo].getLine();
-                        defNode = 
+                        defLine = defOp.getLine();
+                        defNode = new Node(defOp.getOperation(), latencies[defOp.getOperation()], 1);
                         currentEdges.put(defLine, defNode);
-                        
+                        // add reverse edge from def node to o use
+                        DG.get(defLine).put(line, new Node(current.getOperation(), latencies[current.getOperation()], -1));
+                    }
+                }
+
+                // store
+                if (current.getOperation() == 2) {
+                    int useThree = current.getOperand2()[1];
+                    if (useThree != -1) {
+                        if (useThree != -1) {
+                            // add an edge from o to the node in M(VRj)
+                            defOp = M[useThree];
+                            defLine = defOp.getLine();
+                            defNode = new Node(defOp.getOperation(), latencies[defOp.getOperation()], 1);
+                            currentEdges.put(defLine, defNode);
+                            // add reverse edge from def node to o use
+                            DG.get(defLine).put(line, new Node(current.getOperation(), latencies[current.getOperation()], -1));
+                        }
                     }
                 }
                 // if o is a load, store, or output
