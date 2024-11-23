@@ -615,8 +615,6 @@ public class FrontEnd {
                             opcode = 0;
                         } else if (lexeme.equals("store")) {
                             opcode = 2;
-                        } else if (lexeme.equals("output")) {
-                            opcode = 8;
                         }
                         // build the IR for this Op
                         // Add it to the list of Ops
@@ -718,7 +716,7 @@ public class FrontEnd {
                                     // build the IR for this Op
                                     // Add it to the list of Ops
                                     int opcode = -1;
-                                    if (lexeme .equals("add")) {
+                                    if (lexeme.equals("add")) {
                                         opcode = 3;
                                     } else if (lexeme.equals("sub")) {
                                         opcode = 4;

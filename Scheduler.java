@@ -2,10 +2,9 @@
 
 import java.io.BufferedReader;
 import java.io.FileReader;
-import java.util.Arrays;
-import java.util.Stack;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.LinkedList;
 
 public class Scheduler {
     public static OpList internalOpList;
@@ -80,19 +79,25 @@ public class Scheduler {
         // create an empty map, M
         InternalRep M[] = new InternalRep[internalOpList.getMaxVR()+1];
         Map<Integer, Map<Integer, Node>> DG = new HashMap<>();
+        // create linkedlists to store stores, outputs, and loads
+        LinkedList<Integer> stores = new LinkedList<Integer>();
+        LinkedList<Integer> outputs = new LinkedList<Integer>();
+        LinkedList<Integer> loads = new LinkedList<Integer>();
         // walk the block, top to bottom
         InternalRep current = internalOpList.getHead();
         int line = 0;
         int defLine = -1;
         InternalRep defOp = new InternalRep();
         Node defNode;
+        int currOp;
         // op is operation, o is node
         while (current != null) {
             // at each operation op
-            if (current.getOperation() != 9) {
+            currOp = current.getOperation();
+            if (currOp != 9) {
                 Map<Integer, Node> currentEdges = new HashMap<>();
                 // if op defines VRi:
-                if (current.getOperation() != 2) {
+                if (currOp != 2) {
                     if (current.getOperand3()[1] != -1) {
                         // set M(VRi) to op
                         M[current.getOperand3()[1]] = current;
@@ -109,7 +114,7 @@ public class Scheduler {
                         defNode = new Node(defOp.getOperation(), latencies[defOp.getOperation()], 1);
                         currentEdges.put(defLine, defNode);
                         // add reverse edge from def node to o use
-                        DG.get(defLine).put(line, new Node(current.getOperation(), latencies[current.getOperation()], -1));
+                        DG.get(defLine).put(line, new Node(currOp, latencies[currOp], -1));
                     }
                 }
 
@@ -122,12 +127,12 @@ public class Scheduler {
                         defNode = new Node(defOp.getOperation(), latencies[defOp.getOperation()], 1);
                         currentEdges.put(defLine, defNode);
                         // add reverse edge from def node to o use
-                        DG.get(defLine).put(line, new Node(current.getOperation(), latencies[current.getOperation()], -1));
+                        DG.get(defLine).put(line, new Node(currOp, latencies[currOp], -1));
                     }
                 }
 
                 // store
-                if (current.getOperation() == 2) {
+                if (currOp == 2) {
                     int useThree = current.getOperand2()[1];
                     if (useThree != -1) {
                         if (useThree != -1) {
@@ -137,16 +142,27 @@ public class Scheduler {
                             defNode = new Node(defOp.getOperation(), latencies[defOp.getOperation()], 1);
                             currentEdges.put(defLine, defNode);
                             // add reverse edge from def node to o use
-                            DG.get(defLine).put(line, new Node(current.getOperation(), latencies[current.getOperation()], -1));
+                            DG.get(defLine).put(line, new Node(currOp, latencies[currOp], -1));
                         }
                     }
                 }
                 // if o is a load, store, or output
+                if (currOp == 0) { // load
+                    // add edge to most recent store
+                }
                     // add serial and conflict edges to other memory ops
                 // insert current node and it's associated edges into the directed graph
                 DG.put(line, currentEdges);
                 // add IR to quick reference table to convert from node to IR of op
                 DGToIR[line] = current;
+                // add current op to appropriate op list
+                if (currOp == 0) {
+                    loads.add(line);
+                } else if (currOp == 2) {
+                    stores.add(line);
+                } else if (currOp == 8) {
+                    outputs.add(line);
+                }
             }
             current = current.next;
             line++;
