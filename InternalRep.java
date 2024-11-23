@@ -1,15 +1,16 @@
 public class InternalRep {
     private Integer line;
-    private String operation;
+    private Integer operation;
     private Integer[] operand1;
     private Integer[] operand2;
     private Integer[] operand3;
     InternalRep prev;
     InternalRep next;
+    public static String[] opList = {"load", "loadI", "store", "add", "sub", "mult", "lshift", "rshift", "output", "nop"};
 
     public InternalRep() {
         this.line =  null;
-        this.operation = "";
+        this.operation = -1;
         this.operand1 = new Integer[4];
         this.operand2 = new Integer[4];
         this.operand3 = new Integer[4];
@@ -17,7 +18,7 @@ public class InternalRep {
         this.next = null;
     }
 
-    public InternalRep(int line, String operation, 
+    public InternalRep(int line, int operation, 
                         int sr1, int vr1, int pr1, int nu1,
                         int sr2, int vr2, int pr2, int nu2, 
                         int sr3, int vr3, int pr3, int nu3) {
@@ -34,11 +35,11 @@ public class InternalRep {
 
     public void setLine(int line) { this.line = line; }
 
-    public String getOperation() {
+    public int getOperation() {
         return operation;
     }
 
-    public void setOperation(String operation) {
+    public void setOperation(int operation) {
         this.operation = operation;
     }
 
@@ -86,30 +87,30 @@ public class InternalRep {
     }
 
     public String printILOCCP1() {
-        if (operation == "load" || operation == "store") {
-            return operation + "\tr" + operand1[1].toString() + "\t=> r" + operand3[1].toString();
-        } else if (operation == "loadI") {
-            return operation + "\t" + operand1[0].toString() + "\t=> r" + operand3[1].toString();
-        } else if (operation == "add" || operation == "sub" || operation == "mult" || operation == "lshift" || operation == "rshift") {
-            return operation + "\tr" + operand1[1].toString() + ",r" + operand2[1].toString() + "\t=> r" + operand3[1].toString();
-        } else if (operation == "output") {
-            return operation + "\t" + operand1[0].toString();
+        if (operation == 0 || operation == 2) {
+            return opList[operation] + "\tr" + operand1[1].toString() + "\t=> r" + operand3[1].toString();
+        } else if (operation == 1) {
+            return opList[operation] + "\t" + operand1[0].toString() + "\t=> r" + operand3[1].toString();
+        } else if (operation == 3 || operation == 4 || operation == 5 || operation == 6 || operation == 7) {
+            return opList[operation] + "\tr" + operand1[1].toString() + ",r" + operand2[1].toString() + "\t=> r" + operand3[1].toString();
+        } else if (operation == 8) {
+            return opList[operation] + "\t" + operand1[0].toString();
         } else { //nop
-            return operation;
+            return opList[operation];
         }
     }
 
     public String printILOCCP2() {
-        if (operation == "load" || operation == "store") {
-            return operation + "\tr" + operand1[2].toString() + "\t=> r" + operand3[2].toString();
-        } else if (operation == "loadI") {
-            return operation + "\t" + operand1[0].toString() + "\t=> r" + operand3[2].toString();
-        } else if (operation == "add" || operation == "sub" || operation == "mult" || operation == "lshift" || operation == "rshift") {
-            return operation + "\tr" + operand1[2].toString() + ",r" + operand2[2].toString() + "\t=> r" + operand3[2].toString();
-        } else if (operation == "output") {
-            return operation + "\t" + operand1[0].toString();
+        if (operation == 0 || operation == 2) {
+            return opList[operation] + "\tr" + operand1[2].toString() + "\t=> r" + operand3[2].toString();
+        } else if (operation == 1) {
+            return opList[operation] + "\t" + operand1[0].toString() + "\t=> r" + operand3[2].toString();
+        } else if (operation == 3 || operation == 4 || operation == 5 || operation == 6 || operation == 7) {
+            return opList[operation] + "\tr" + operand1[2].toString() + ",r" + operand2[2].toString() + "\t=> r" + operand3[2].toString();
+        } else if (operation == 8) {
+            return opList[operation] + "\t" + operand1[0].toString();
         } else { //nop
-            return operation;
+            return opList[operation];
         }
     }
 }

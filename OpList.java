@@ -1,10 +1,12 @@
 public class OpList {
     private InternalRep head;
     private InternalRep tail;
+    private int maxVR;
 
     public OpList() {
         this.head = null;
         this.tail = null;
+        this.maxVR = 0;
     }
 
     public InternalRep getHead() {
@@ -13,6 +15,14 @@ public class OpList {
 
     public InternalRep getTail() {
         return tail;
+    }
+
+    public int getMaxVR() {
+        return maxVR;
+    }
+
+    public void setMaxVR(int maxVR) {
+        this.maxVR = maxVR;
     }
 
     public void traverseForward(){
@@ -26,7 +36,7 @@ public class OpList {
     public void traverseILOC() {
         InternalRep current = head;
         while (current != null) {
-            System.out.println(current.printILOCCP2());
+            System.out.println(current.printILOCCP1());
             current = current.next;
         }
     }
@@ -56,7 +66,7 @@ public class OpList {
     public void insertDummyHead() {
         InternalRep prevHead = this.head;
         InternalRep dummyHead = new InternalRep();
-        dummyHead.setOperation("//dummy head");
+        dummyHead.setOperation(100);
         this.head = dummyHead;
         this.head.prev = null;
         this.head.next = prevHead;
@@ -78,8 +88,8 @@ public class OpList {
         int maxSR = -1; // set max register to -1 (in case of only output or nop blocks)
         InternalRep current = head.getNext();
         while (current != null) {
-            String operation = current.getOperation();
-            if (operation.equals("output") || operation.equals("nop")) { // skip these
+            int operation = current.getOperation();
+            if (operation == 8 || operation == 9) { // skip these
                 current = current.next;
                 continue;
             } else { // literally anything else
@@ -89,13 +99,13 @@ public class OpList {
                 }
                 
                 // get the second use register for eligible operations
-                if (operation.equals("add") || operation.equals("sub") || operation.equals("mult")
-                    || operation.equals("lshift") || operation.equals("rshift")) { // get second register for eligible operations
+                if (operation == 3 || operation == 4 || operation == 5
+                    || operation == 6 || operation == 7) { // get second register for eligible operations
                         if (current.getOperand2()[0] > maxSR) {
                             maxSR = current.getOperand2()[0];
                         }
                 }
-                if (!operation.equals("loadI")) {
+                if (!(operation == 1)) {
                     // get the first use register
                     if (current.getOperand1()[0] > maxSR) {
                         maxSR = current.getOperand1()[0];

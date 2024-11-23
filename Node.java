@@ -1,15 +1,19 @@
 public class Node {
     private int type;
-    private int delay;
+    private int latency;
+    private int dependency;
     
     public Node() {
         this.type = -1;
-        this.delay = -1;
+        this.latency = -1;
+        this.dependency = 0;
+
     }
 
-    public Node(int type, int delay) {
+    public Node(int type, int latency, int dependency) {
         this.type = type;
-        this.delay = delay;
+        this.latency = latency;
+        this.dependency = dependency;
     }
 
     public int getType() {
@@ -20,15 +24,23 @@ public class Node {
         this.type = type;
     }
 
-    public int getDelay() {
-        return delay;
+    public int getLatency() {
+        return latency;
     }
 
-    public void setDelay(int delay) {
-        this.delay = delay;
+    public void setLatency(int latency) {
+        this.latency = latency;
+    }
+
+    public int getDependency() {
+        return dependency;
+    }
+
+    public void setDependency(int dependency) {
+        this.dependency = dependency;
     }
 
     public String toString() {
-        return "( type: " + Integer.toString(this.type) + ", delay: " + Integer.toString(this.delay) + " )";
+        return "( type: " + Integer.toString(this.type) + ", latency: " + Integer.toString(this.latency) + " )";
     }
 }

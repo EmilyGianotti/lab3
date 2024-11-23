@@ -610,9 +610,17 @@ public class FrontEnd {
                     pos = eol.getPos();
                     // if EOL
                     if (pos == 10) {
+                        int opcode = -1;
+                        if (lexeme.equals("load")) {
+                            opcode = 0;
+                        } else if (lexeme.equals("store")) {
+                            opcode = 2;
+                        } else if (lexeme.equals("output")) {
+                            opcode = 8;
+                        }
                         // build the IR for this Op
                         // Add it to the list of Ops
-                        internalOpList.insertAtEnd(new InternalRep(lineNum, lexeme, Integer.parseInt(reg1.getLexeme().substring(1)), -1, -1, -1, -1, -1, -1, -1, Integer.parseInt(reg2.getLexeme().substring(1)), -1, -1, -1));
+                        internalOpList.insertAtEnd(new InternalRep(lineNum, opcode, Integer.parseInt(reg1.getLexeme().substring(1)), -1, -1, -1, -1, -1, -1, -1, Integer.parseInt(reg2.getLexeme().substring(1)), -1, -1, -1));
                     } else { // not EOL
                         System.err.println("ERROR " + Integer.toString(lineNum) + ":\t" + '"' + wordList[pos] + '"' + " is not the end of the line");
                         return;
@@ -653,7 +661,7 @@ public class FrontEnd {
                         if (pos == 10) {
                             // build the IR for this Op
                             // Add it to the list of Ops
-                            internalOpList.insertAtEnd(new InternalRep(lineNum, "loadI", Integer.parseInt(constant.getLexeme()), -1, -1, -1, -1, -1, -1, -1, Integer.parseInt(register.getLexeme().substring(1)), -1, -1, -1));
+                            internalOpList.insertAtEnd(new InternalRep(lineNum, 1, Integer.parseInt(constant.getLexeme()), -1, -1, -1, -1, -1, -1, -1, Integer.parseInt(register.getLexeme().substring(1)), -1, -1, -1));
                         } else { // not EOL
                             System.err.println("ERROR " + Integer.toString(lineNum) + ":\t" + '"' + wordList[pos] + '"' + " is not the end of the line");
                             return;
@@ -709,7 +717,19 @@ public class FrontEnd {
                                 if (pos == 10) {
                                     // build the IR for this Op
                                     // Add it to the list of Ops
-                                    internalOpList.insertAtEnd(new InternalRep(lineNum, lexeme, Integer.parseInt(reg1.getLexeme().substring(1)), -1, -1, -1, Integer.parseInt(reg2.getLexeme().substring(1)), -1, -1, -1, Integer.parseInt(reg3.getLexeme().substring(1)), -1, -1, -1));
+                                    int opcode = -1;
+                                    if (lexeme .equals("add")) {
+                                        opcode = 3;
+                                    } else if (lexeme.equals("sub")) {
+                                        opcode = 4;
+                                    } else if (lexeme.equals("mult")) {
+                                        opcode = 5;
+                                    } else if (lexeme.equals("lshift")) {
+                                        opcode = 6;
+                                    } else if (lexeme.equals("rshift")) {
+                                        opcode = 7;
+                                    }
+                                    internalOpList.insertAtEnd(new InternalRep(lineNum, opcode, Integer.parseInt(reg1.getLexeme().substring(1)), -1, -1, -1, Integer.parseInt(reg2.getLexeme().substring(1)), -1, -1, -1, Integer.parseInt(reg3.getLexeme().substring(1)), -1, -1, -1));
 
                                 } else { // not EOL
                                     System.err.println("ERROR " + Integer.toString(lineNum) + ":\t" + '"' + wordList[pos] + '"' + " is not the end of the line");
@@ -740,7 +760,7 @@ public class FrontEnd {
                 if (pos == 10) {
                     // build the IR for this Op
                     // Add it to the list of Ops
-                    internalOpList.insertAtEnd(new InternalRep(lineNum, "output", Integer.parseInt(constant.getLexeme()), -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1));
+                    internalOpList.insertAtEnd(new InternalRep(lineNum, 8, Integer.parseInt(constant.getLexeme()), -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1));
                 } else { // not EOL
                     System.err.println("ERROR " + Integer.toString(lineNum) + ":\t" + '"' + wordList[pos] + '"' + " is not the end of the line");
                     return;
@@ -762,7 +782,7 @@ public class FrontEnd {
             } else {
                 // build the IR for this Op
                 // Add it to the list of Ops
-                internalOpList.insertAtEnd(new InternalRep(lineNum, "nop", -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1));
+                internalOpList.insertAtEnd(new InternalRep(lineNum, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1));
             }
         } catch (Exception e) {
             System.err.println(e.getMessage());
