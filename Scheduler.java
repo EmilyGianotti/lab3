@@ -4,7 +4,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.ArrayList;
 
 public class Scheduler {
     public static OpList internalOpList;
@@ -80,9 +80,9 @@ public class Scheduler {
         InternalRep M[] = new InternalRep[internalOpList.getMaxVR()+1];
         Map<Integer, Map<Integer, Node>> DG = new HashMap<>();
         // create linkedlists to store stores, outputs, and loads
-        LinkedList<Integer> stores = new LinkedList<Integer>();
-        LinkedList<Integer> outputs = new LinkedList<Integer>();
-        LinkedList<Integer> loads = new LinkedList<Integer>();
+        ArrayList<Integer> stores = new ArrayList<Integer>();
+        ArrayList<Integer> outputs = new ArrayList<Integer>();
+        ArrayList<Integer> loads = new ArrayList<Integer>();
         // walk the block, top to bottom
         InternalRep current = internalOpList.getHead();
         int line = 0;
@@ -146,9 +146,62 @@ public class Scheduler {
                         }
                     }
                 }
+
                 // if o is a load, store, or output
                 if (currOp == 0) { // load
-                    // add edge to most recent store
+                    // add edge from op to most recent store
+                    if (stores.size() > 0) {
+                        // want line, type, latency, and direction of most recent store
+                        currentEdges.put(stores.get(stores.size()-1), 
+                                        new Node(DGToIR[stores.get(stores.size()-1)].getOperation(), 
+                                        latencies[DGToIR[stores.get(stores.size()-1)].getOperation()], 1));
+                    }
+                    loads.add(line);
+                }
+                
+                if (currOp == 2) { // store
+                    // add edge from op to most recent store
+                    if (stores.size() > 0) {
+                        // want line, type, latency, and direction of most recent store
+                        currentEdges.put(stores.get(stores.size()-1), 
+                                        new Node(DGToIR[stores.get(stores.size()-1)].getOperation(), 
+                                        latencies[DGToIR[stores.get(stores.size()-1)].getOperation()], 1));
+                    }
+                    // add edges from op to each previous load
+                    if (loads.size() > 0) {
+                        for (int i = 0; i < loads.size(); i++) {
+                            // want line, type, latency, and direction of load
+                            currentEdges.put(loads.get(i), new Node(DGToIR[loads.get(i)].getOperation(),
+                                            latencies[DGToIR[loads.get(i)].getOperation()], 1));
+                        }
+                    }
+                    // add edges from op to each previous output
+                    if (outputs.size() > 0) {
+                        for (int i = 0; i < outputs.size(); i++) {
+                            // want line, type, latency, and direction of load
+                            currentEdges.put(outputs.get(i), new Node(DGToIR[outputs.get(i)].getOperation(),
+                                            latencies[DGToIR[outputs.get(i)].getOperation()], 1));
+                        }
+                    }
+                    stores.add(line);
+                }
+
+                if (currOp == 8) { //output
+                    // add edge from op to most recent store
+                    if (stores.size() > 0) {
+                        // want line, type, latency, and direction of most recent store
+                        currentEdges.put(stores.get(stores.size()-1), 
+                                        new Node(DGToIR[stores.get(stores.size()-1)].getOperation(), 
+                                        latencies[DGToIR[stores.get(stores.size()-1)].getOperation()], 1));
+                    }
+
+                    // add edge from op to most recent output
+                    if (outputs.size() > 0) {
+                        // want line, type, latency, and direction of most recent output
+                        currentEdges.put(outputs.get(outputs.size()-1), 
+                                        new Node(DGToIR[outputs.get(outputs.size()-1)].getOperation(), 
+                                        latencies[DGToIR[outputs.get(outputs.size()-1)].getOperation()], 1));
+                    }
                 }
                     // add serial and conflict edges to other memory ops
                 // insert current node and it's associated edges into the directed graph
