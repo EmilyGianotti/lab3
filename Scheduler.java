@@ -69,6 +69,7 @@ public class Scheduler {
             Map<Integer, Map<Integer, Node>> graph = buildGraph();
             graphToString(graph);
             drawGraph(graph);
+            System.out.println(findRoots(graph));
             
         } catch (Exception e) {
             System.err.println("ERROR:");
@@ -263,7 +264,7 @@ public class Scheduler {
             for(Map.Entry<Integer, Map<Integer, Node>> nodeEntry : graph.entrySet()) {
                 Integer nodeLine = nodeEntry.getKey();
                 // create node for current OP
-                graphWriter.write(Integer.toString(nodeLine+1) + " [label = \"" + Integer.toString(nodeLine+1) + "\n" 
+                graphWriter.write(nodeLine.toString() + " [label = \"" + nodeLine.toString() + "\n" 
                                 + DGToIR[nodeLine].printILOCCP1() + "\"];\n");
                 // edge work, will put in a string to concatenate at the end
                 for (Map.Entry<Integer, Node> edgeEntry : nodeEntry.getValue().entrySet()) {
@@ -271,9 +272,9 @@ public class Scheduler {
                     Node otherNode = edgeEntry.getValue();
                     Integer edgeDirection = otherNode.getDependency();
                     if (edgeDirection == 1) {
-                        edges = edges + Integer.toString(nodeLine+1) + " -> " + Integer.toString(otherNodeLine+1) + "[color=\"blue\"];\n";
+                        edges = edges + nodeLine.toString() + " -> " + otherNodeLine.toString() + "[color=\"blue\"];\n";
                     } else {
-                        edges = edges + Integer.toString(nodeLine+1) + " -> " + Integer.toString(otherNodeLine+1) + "[color=\"red\"];\n";
+                        edges = edges + nodeLine.toString() + " -> " + otherNodeLine.toString() + "[color=\"red\"];\n";
                     }
                     
                     // if (edgeDirection == 1) {
@@ -314,5 +315,31 @@ public class Scheduler {
             }
             System.out.println("\n");
         }
+    }
+
+    /**
+     * Finds any independent (no other nodes depend on them) nodes in graph
+     * @param graph Map<Integer, Map<Integer, Node>> that represents dependencies between ILOC ops in a given block
+     * @return an ArrayList of integers that represent any independent nodes in graph
+     */
+    public static ArrayList<Integer> findRoots(Map<Integer, Map<Integer, Node>> graph) {
+        ArrayList<Integer> roots = new ArrayList();
+        int independent;
+        for(Map.Entry<Integer, Map<Integer, Node>> nodeEntry : graph.entrySet()) {
+            independent = 1;
+            for (Map.Entry<Integer, Node> edgeEntry : nodeEntry.getValue().entrySet()) {
+                // if there is a reverse edge in the current node's POV (a forward edge from another node)
+                if (edgeEntry.getValue().getDependency() == -1) {
+                    // the node is not independent
+                    independent = 0;
+                    break;
+                }
+            }
+            // check independence for root
+            if (independent == 1) {
+                roots.add(nodeEntry.getKey());
+            }
+        }
+        return roots;
     }
 }
