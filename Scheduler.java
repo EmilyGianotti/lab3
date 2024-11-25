@@ -64,7 +64,8 @@ public class Scheduler {
             internalOpList = Renamer.rename(internalOpList.size(), internalOpList.findMaxSR(), internalOpList);
             internalOpList.traverseILOC();
             System.out.println(internalOpList.size());
-            // buildGraph(maxVR);
+            Map<Integer, Map<Integer, Node>> graph = buildGraph();
+            
         } catch (Exception e) {
             System.err.println("ERROR:");
             e.printStackTrace();
@@ -155,6 +156,8 @@ public class Scheduler {
                         currentEdges.put(stores.get(stores.size()-1), 
                                         new Node(DGToIR[stores.get(stores.size()-1)].getOperation(), 
                                         latencies[DGToIR[stores.get(stores.size()-1)].getOperation()], 1));
+                        // add reverse edge from most recent store to op
+                        DG.get(stores.get(stores.size()-1)).put(line, new Node(currOp, latencies[currOp], -1));
                     }
                     loads.add(line);
                 }
@@ -166,6 +169,8 @@ public class Scheduler {
                         currentEdges.put(stores.get(stores.size()-1), 
                                         new Node(DGToIR[stores.get(stores.size()-1)].getOperation(), 
                                         latencies[DGToIR[stores.get(stores.size()-1)].getOperation()], 1));
+                        // add reverse edge from most recent store to op
+                        DG.get(stores.get(stores.size()-1)).put(line, new Node(currOp, latencies[currOp], -1));
                     }
                     // add edges from op to each previous load
                     if (loads.size() > 0) {
@@ -173,6 +178,8 @@ public class Scheduler {
                             // want line, type, latency, and direction of load
                             currentEdges.put(loads.get(i), new Node(DGToIR[loads.get(i)].getOperation(),
                                             latencies[DGToIR[loads.get(i)].getOperation()], 1));
+                            // add reverse edge from most recent store to op
+                            DG.get(loads.get(i)).put(line, new Node(currOp, latencies[currOp], -1));
                         }
                     }
                     // add edges from op to each previous output
@@ -181,6 +188,8 @@ public class Scheduler {
                             // want line, type, latency, and direction of load
                             currentEdges.put(outputs.get(i), new Node(DGToIR[outputs.get(i)].getOperation(),
                                             latencies[DGToIR[outputs.get(i)].getOperation()], 1));
+                            // add reverse edge from most recent store to op
+                            DG.get(outputs.get(i)).put(line, new Node(currOp, latencies[currOp], -1));
                         }
                     }
                     stores.add(line);
@@ -194,6 +203,8 @@ public class Scheduler {
                                         new Node(DGToIR[stores.get(stores.size()-1)].getOperation(), 
                                         latencies[DGToIR[stores.get(stores.size()-1)].getOperation()], 1));
                     }
+                    // add reverse edge from most recent store to op
+                    DG.get(stores.get(stores.size()-1)).put(line, new Node(currOp, latencies[currOp], -1));
 
                     // add edge from op to most recent output
                     if (outputs.size() > 0) {
@@ -201,9 +212,10 @@ public class Scheduler {
                         currentEdges.put(outputs.get(outputs.size()-1), 
                                         new Node(DGToIR[outputs.get(outputs.size()-1)].getOperation(), 
                                         latencies[DGToIR[outputs.get(outputs.size()-1)].getOperation()], 1));
+                        // add reverse edge from most recent store to op
+                        DG.get(outputs.get(outputs.size()-1)).put(line, new Node(currOp, latencies[currOp], -1));
                     }
                 }
-                    // add serial and conflict edges to other memory ops
                 // insert current node and it's associated edges into the directed graph
                 DG.put(line, currentEdges);
                 // add IR to quick reference table to convert from node to IR of op
