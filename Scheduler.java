@@ -294,7 +294,7 @@ public class Scheduler {
     public static void graphToString(Map<Integer, Map<Integer, Node>> graph) {
         for(Map.Entry<Integer, Map<Integer, Node>> nodeEntry : graph.entrySet()) {
             System.out.println("Node " + nodeEntry.getKey() + "\t" + DGToIR[nodeEntry.getKey()].printILOCCP1());
-            Integer nodeLine = nodeEntry.getKey();
+            // Integer nodeLine = nodeEntry.getKey();
             for (Map.Entry<Integer, Node> edgeEntry : nodeEntry.getValue().entrySet()) {
                 Integer otherNodeLine = edgeEntry.getKey();
                 Node otherNode = edgeEntry.getValue();
@@ -302,7 +302,7 @@ public class Scheduler {
                 if (edgeDirection == 1) {
                     System.out.println("forward edge to " + otherNodeLine.toString());
                 } else {
-                    System.out.println("reverse edge from " + otherNodeLine.toString());
+                    System.out.println("reverse edge to " + otherNodeLine.toString());
                 }
             }
             System.out.println("\n");
