@@ -67,7 +67,9 @@ public class Scheduler {
             internalOpList = frontEnd.doParse(br); // parse ILOC block
             internalOpList = Renamer.rename(internalOpList.size(), internalOpList.findMaxSR(), internalOpList);
             internalOpList.traverseILOC();
+            DGToIR = new InternalRep[internalOpList.size()];
             Map<Integer, Map<Integer, Node>> graph = buildGraph();
+            graphToString(graph);
             drawGraph(graph);
             
         } catch (Exception e) {
@@ -99,18 +101,22 @@ public class Scheduler {
         while (current != null) {
             // at each operation op
             currOp = current.getOperation();
+            current.setLine(line);
             if (currOp != 9) {
                 Map<Integer, Node> currentEdges = new HashMap<>();
                 // if op defines VRi:
                 if (currOp != 2) {
                     if (current.getOperand3()[1] != -1) {
+                        System.out.println("in def");
                         // set M(VRi) to op
+                        System.out.println("def is r" + Integer.toString(current.getOperand3()[1]) + " and line is " + Integer.toString(current.getLine()));
                         M[current.getOperand3()[1]] = current;
                     }
 
                 }
                 // for each VRj used in op
                 int useOne = current.getOperand1()[1];
+                System.out.println("in use 1");
                 if (useOne != -1) {
                     if (useOne != -1) {
                         // add an edge from o use to the def node in M(VRj)
@@ -124,14 +130,17 @@ public class Scheduler {
                 }
 
                 int useTwo = current.getOperand2()[1];
+                System.out.println("in use 2");
                 if (useTwo != -1) {
                     if (useTwo != -1) {
                         // add an edge from o to the node in M(VRj)
                         defOp = M[useTwo];
                         defLine = defOp.getLine();
+                        System.out.println("defline is " + Integer.toString(defLine));
                         defNode = new Node(defOp.getOperation(), latencies[defOp.getOperation()], 1);
                         currentEdges.put(defLine, defNode);
                         // add reverse edge from def node to o use
+                        DG.toString();
                         DG.get(defLine).put(line, new Node(currOp, latencies[currOp], -1));
                     }
                 }
@@ -233,6 +242,7 @@ public class Scheduler {
                     outputs.add(line);
                 }
             }
+            System.out.println("made it past " + current.printILOCCP1() + "\n");
             current = current.next;
             line++;
         }
@@ -243,25 +253,33 @@ public class Scheduler {
         try {
             // create graph file
             FileWriter graphWriter = new FileWriter("ILOCblock.dot");
-            graphWriter.write("{\n");
+            graphWriter.write("digraph slides\n{\n");
             // create Sting to store edges
             String edges = "";
             // write to graph file
             for(Map.Entry<Integer, Map<Integer, Node>> nodeEntry : graph.entrySet()) {
                 Integer nodeLine = nodeEntry.getKey();
                 // create node for current OP
-                graphWriter.write(nodeLine.toString() + " [label = \"" + nodeLine.toString() + "\n" 
-                                + DGToIR[nodeLine].toString() + "\"];\n");
+                graphWriter.write(Integer.toString(nodeLine+1) + " [label = \"" + Integer.toString(nodeLine+1) + "\n" 
+                                + DGToIR[nodeLine].printILOCCP1() + "\"];\n");
                 // edge work, will put in a string to concatenate at the end
                 for (Map.Entry<Integer, Node> edgeEntry : nodeEntry.getValue().entrySet()) {
                     Integer otherNodeLine = edgeEntry.getKey();
                     Node otherNode = edgeEntry.getValue();
                     Integer edgeDirection = otherNode.getDependency();
                     if (edgeDirection == 1) {
-                        edges = edges + nodeLine.toString() + " -> " + otherNodeLine.toString() + ";\n";
+                        edges = edges + Integer.toString(nodeLine+1) + " -> " + Integer.toString(otherNodeLine+1) + "[color=\"blue\"];\n";
                     } else {
-                        edges = edges + otherNodeLine.toString() + " -> " + nodeLine.toString() + ";\n";
+                        edges = edges + Integer.toString(nodeLine+1) + " -> " + Integer.toString(otherNodeLine+1) + "[color=\"red\"];\n";
                     }
+                    
+                    // if (edgeDirection == 1) {
+                    //     System.out.println("forward edge from " + nodeLine.toString() + " to " + otherNodeLine.toString());
+                    //     edges = edges + nodeLine.toString() + " -> " + otherNodeLine.toString() + ";\n";
+                    // } else {
+                    //     System.out.println("reverse edge from " + nodeLine.toString() + " to " + otherNodeLine.toString());
+                    //     edges = edges + otherNodeLine.toString() + " -> " + nodeLine.toString() + ";\n";
+                    // }
                 }
             }
             // add edges to bottom of file
@@ -271,6 +289,23 @@ public class Scheduler {
             System.out.println("An error occurred.");
             e.printStackTrace();
         }
+    }
 
+    public static void graphToString(Map<Integer, Map<Integer, Node>> graph) {
+        for(Map.Entry<Integer, Map<Integer, Node>> nodeEntry : graph.entrySet()) {
+            System.out.println("Node " + nodeEntry.getKey() + "\t" + DGToIR[nodeEntry.getKey()].printILOCCP1());
+            Integer nodeLine = nodeEntry.getKey();
+            for (Map.Entry<Integer, Node> edgeEntry : nodeEntry.getValue().entrySet()) {
+                Integer otherNodeLine = edgeEntry.getKey();
+                Node otherNode = edgeEntry.getValue();
+                Integer edgeDirection = otherNode.getDependency();
+                if (edgeDirection == 1) {
+                    System.out.println("forward edge to " + otherNodeLine.toString());
+                } else {
+                    System.out.println("reverse edge from " + otherNodeLine.toString());
+                }
+            }
+            System.out.println("\n");
+        }
     }
 }
