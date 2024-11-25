@@ -68,7 +68,7 @@ public class Scheduler {
             internalOpList = Renamer.rename(internalOpList.size(), internalOpList.findMaxSR(), internalOpList);
             internalOpList.traverseILOC();
             Map<Integer, Map<Integer, Node>> graph = buildGraph();
-            createGraph(graph);
+            drawGraph(graph);
             
         } catch (Exception e) {
             System.err.println("ERROR:");
