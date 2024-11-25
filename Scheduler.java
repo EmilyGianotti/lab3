@@ -247,6 +247,11 @@ public class Scheduler {
         return DG;
     }
 
+    /**
+     * Create .dot file for Graphviz from directional graph that represents dependencies between ILOC ops
+     * @param graph Map<Integer, Map<Integer, Node>> that represents dependencies between ILOC ops in a given block
+     * @throws IOException in case something goes wrong with creating, writing to, and closing the .dot file
+     */
     public static void drawGraph(Map<Integer, Map<Integer, Node>> graph) throws IOException{
         try {
             // create graph file
@@ -291,7 +296,7 @@ public class Scheduler {
 
     /**
      * Prints out graph with nodes and edge directions
-     * @param graph directional graph that represents renamed ILOC block dependencies
+     * @param graph Map<Integer, Map<Integer, Node>> that represents dependencies between ILOC ops in a given block
      */
     public static void graphToString(Map<Integer, Map<Integer, Node>> graph) {
         for(Map.Entry<Integer, Map<Integer, Node>> nodeEntry : graph.entrySet()) {
