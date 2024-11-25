@@ -5,8 +5,6 @@ import java.io.FileReader;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.ArrayList;
-import java.io.File;
-import java.io.File;
 import java.io.IOException;
 import java.io.FileWriter;
 
@@ -291,6 +289,10 @@ public class Scheduler {
         }
     }
 
+    /**
+     * Prints out graph with nodes and edge directions
+     * @param graph directional graph that represents renamed ILOC block dependencies
+     */
     public static void graphToString(Map<Integer, Map<Integer, Node>> graph) {
         for(Map.Entry<Integer, Map<Integer, Node>> nodeEntry : graph.entrySet()) {
             System.out.println("Node " + nodeEntry.getKey() + "\t" + DGToIR[nodeEntry.getKey()].printILOCCP1());
