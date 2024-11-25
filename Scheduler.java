@@ -5,6 +5,10 @@ import java.io.FileReader;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.ArrayList;
+import java.io.File;
+import java.io.File;
+import java.io.IOException;
+import java.io.FileWriter;
 
 public class Scheduler {
     public static OpList internalOpList;
@@ -63,8 +67,8 @@ public class Scheduler {
             internalOpList = frontEnd.doParse(br); // parse ILOC block
             internalOpList = Renamer.rename(internalOpList.size(), internalOpList.findMaxSR(), internalOpList);
             internalOpList.traverseILOC();
-            System.out.println(internalOpList.size());
             Map<Integer, Map<Integer, Node>> graph = buildGraph();
+            createGraph(graph);
             
         } catch (Exception e) {
             System.err.println("ERROR:");
@@ -233,5 +237,40 @@ public class Scheduler {
             line++;
         }
         return DG;
+    }
+
+    public static void drawGraph(Map<Integer, Map<Integer, Node>> graph) throws IOException{
+        try {
+            // create graph file
+            FileWriter graphWriter = new FileWriter("ILOCblock.dot");
+            graphWriter.write("{\n");
+            // create Sting to store edges
+            String edges = "";
+            // write to graph file
+            for(Map.Entry<Integer, Map<Integer, Node>> nodeEntry : graph.entrySet()) {
+                Integer nodeLine = nodeEntry.getKey();
+                // create node for current OP
+                graphWriter.write(nodeLine.toString() + " [label = \"" + nodeLine.toString() + "\n" 
+                                + DGToIR[nodeLine].toString() + "\"];\n");
+                // edge work, will put in a string to concatenate at the end
+                for (Map.Entry<Integer, Node> edgeEntry : nodeEntry.getValue().entrySet()) {
+                    Integer otherNodeLine = edgeEntry.getKey();
+                    Node otherNode = edgeEntry.getValue();
+                    Integer edgeDirection = otherNode.getDependency();
+                    if (edgeDirection == 1) {
+                        edges = edges + nodeLine.toString() + " -> " + otherNodeLine.toString() + ";\n";
+                    } else {
+                        edges = edges + otherNodeLine.toString() + " -> " + nodeLine.toString() + ";\n";
+                    }
+                }
+            }
+            // add edges to bottom of file
+            graphWriter.write(edges + "}");
+            graphWriter.close();
+        } catch (IOException e) {
+            System.out.println("An error occurred.");
+            e.printStackTrace();
+        }
+
     }
 }
