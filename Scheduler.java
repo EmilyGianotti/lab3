@@ -12,6 +12,7 @@ public class Scheduler {
     public static OpList internalOpList;
     public static InternalRep DGToIR[];
     public static Integer latencies[] = {6, 1, 6, 1, 1, 3, 1, 1, 1, 1};
+    public static Map<Integer, Map<Integer, Node>> graph;
 
     public static void main(String[] args) throws Exception {
         int i = 0;
@@ -66,11 +67,13 @@ public class Scheduler {
             internalOpList = Renamer.rename(internalOpList.size(), internalOpList.findMaxSR(), internalOpList);
             internalOpList.traverseILOC();
             DGToIR = new InternalRep[internalOpList.size()];
-            Map<Integer, Map<Integer, Node>> graph = buildGraph();
+            graph = buildGraph();
             graphToString(graph);
             drawGraph(graph);
-            System.out.println(findRoots(graph));
-            
+            ArrayList<Integer> roots = findRoots(graph);
+            for(int r = 0; r < roots.size(); r++) {
+                prioritize(roots.get(r), 0);
+            }
         } catch (Exception e) {
             System.err.println("ERROR:");
             e.printStackTrace();
@@ -312,6 +315,7 @@ public class Scheduler {
                 } else {
                     System.out.println("reverse edge to " + otherNodeLine.toString());
                 }
+                System.out.println("priority of " + Integer.toString(otherNode.getPriority()));
             }
             System.out.println("\n");
         }
@@ -341,5 +345,35 @@ public class Scheduler {
             }
         }
         return roots;
+    }
+
+    /**
+     * DFS tree-walk algorithm that computes latency-weighted distance priorities of nodes in graph
+     * @param node an integer representing a node in the ILOC block dependency graph
+     * @param latency
+     */
+    public static void prioritize(int node, int latency) {
+        // TODO: Do this ITERATIVELY
+        
+        // retrieve all nodes connected to current node
+        Map<Integer, Node> edgeNodes = graph.get(node);
+        // iterate over all connected nodes
+        for (Map.Entry<Integer, Node> edgeEntry : edgeNodes.entrySet()) {
+            // Check if edge is forward or reverse (we're only considering forward edges)
+            Node otherNode = edgeEntry.getValue();
+            // if (otherNode.getDependency() == -1) {
+            //     continue;
+            // }
+            
+            // If the node is valid, we need to check if its latency < the new latency
+            if (otherNode.getPriority() < (otherNode.getPriority() + latency)) {
+                otherNode.setPriority(otherNode.getPriority() + latency);
+            } else {
+                // We've already maxed out this path
+                continue;
+            }
+            // Recurse on valid edges
+            prioritize(edgeEntry.getKey(), otherNode.getPriority());
+        }
     }
 }
