@@ -2,18 +2,20 @@ public class Node {
     private int type;
     private int latency;
     private int dependency;
+    private int priority;
     
     public Node() {
         this.type = -1;
         this.latency = -1;
         this.dependency = 0;
-
+        this.priority = -1;
     }
 
     public Node(int type, int latency, int dependency) {
         this.type = type;
         this.latency = latency;
         this.dependency = dependency;
+        this.priority = -1;
     }
 
     public int getType() {
@@ -38,6 +40,14 @@ public class Node {
 
     public void setDependency(int dependency) {
         this.dependency = dependency;
+    }
+
+    public int getPriority() {
+        return priority;
+    }
+
+    public void setPriority(int priority) {
+        this.priority = priority;
     }
 
     public String toString() {

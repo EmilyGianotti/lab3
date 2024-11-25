@@ -323,7 +323,7 @@ public class Scheduler {
      * @return an ArrayList of integers that represent any independent nodes in graph
      */
     public static ArrayList<Integer> findRoots(Map<Integer, Map<Integer, Node>> graph) {
-        ArrayList<Integer> roots = new ArrayList();
+        ArrayList<Integer> roots = new ArrayList<Integer>();
         int independent;
         for(Map.Entry<Integer, Map<Integer, Node>> nodeEntry : graph.entrySet()) {
             independent = 1;
