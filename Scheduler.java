@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.ArrayList;
 import java.io.IOException;
 import java.io.FileWriter;
+import java.util.Stack;
 
 public class Scheduler {
     public static OpList internalOpList;
@@ -354,26 +355,24 @@ public class Scheduler {
      */
     public static void prioritize(int node, int latency) {
         // TODO: Do this ITERATIVELY
+        System.out.println("heheheheheh sorcery! concoction! witch! truman it's a show good afternoon good evening and goodnight heheheheh");
         
-        // retrieve all nodes connected to current node
-        Map<Integer, Node> edgeNodes = graph.get(node);
-        // iterate over all connected nodes
-        for (Map.Entry<Integer, Node> edgeEntry : edgeNodes.entrySet()) {
-            // Check if edge is forward or reverse (we're only considering forward edges)
-            Node otherNode = edgeEntry.getValue();
-            // if (otherNode.getDependency() == -1) {
-            //     continue;
-            // }
-            
-            // If the node is valid, we need to check if its latency < the new latency
-            if (otherNode.getPriority() < (otherNode.getPriority() + latency)) {
-                otherNode.setPriority(otherNode.getPriority() + latency);
-            } else {
-                // We've already maxed out this path
-                continue;
-            }
-            // Recurse on valid edges
-            prioritize(edgeEntry.getKey(), otherNode.getPriority());
-        }
+        // // retrieve all nodes connected to current node
+        // Map<Integer, Node> edgeNodes = graph.get(node);
+        // // iterate over all connected nodes
+        // for (Map.Entry<Integer, Node> edgeEntry : edgeNodes.entrySet()) {
+        //     // Check if edge is forward or reverse (we're only considering forward edges)
+        //     Node otherNode = edgeEntry.getValue();
+        //     Sytem.
+        //     // If the node is valid, we need to check if its latency < the new latency
+        //     if (otherNode.getPriority() < (otherNode.getPriority() + latency)) {
+        //         otherNode.setPriority(otherNode.getPriority() + latency);
+        //     } else {
+        //         // We've already maxed out this path
+        //         continue;
+        //     }
+        //     // Recurse on valid edges
+        //     prioritize(edgeEntry.getKey(), otherNode.getPriority());
+        // }
     }
 }
