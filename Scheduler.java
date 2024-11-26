@@ -423,18 +423,210 @@ public class Scheduler {
         return leaves;
     }
 
-    public static void schedule (ArrayList<Integer> ready) {
+    public static void schedule (ArrayList<Integer> leaves) {
         int cycle = 1;
         ArrayList<int[]> active = new ArrayList<int[]>();
+        ArrayList<Integer> readyF0 = new ArrayList<Integer>();
+        ArrayList<Integer> readyF1 = new ArrayList<Integer>();
+        ArrayList<Integer> readyOutput = new ArrayList<Integer>();
+        ArrayList<Integer> readyMisc = new ArrayList<Integer>();
+        ArrayList<Integer> retired = new ArrayList<Integer>();
+        int[] f0 = new int[2];
+        int[] f1 = new int[2];
+        int[] pickedOps;
+        int ready = 1;
 
-        while(ready.size() + active.size() != 0) {
+        // Sort leaves into appropriate ready sets
+        for (int l = 0; l < leaves.size(); l++) {
+            sortOp(leaves.get(l), readyF0, readyF1, readyOutput, readyMisc);
+        }
 
+        // schedule all ops
+        while(readyF0.size() + readyF1.size() + readyOutput.size() + readyMisc.size() + active.size() != 0) {
+            // pick ops for each functional unit
+            pickedOps = pickOp(readyF0, readyF1, readyOutput, readyMisc);
+            // move ops from ready set to active set
+            for (int i = 0; i < pickedOps.length; i++) {
+                if(pickedOps[i] != -1) {
+                    active.add(new int[] {pickedOps[i], cycle + latencies[pickedOps[i]]});
+                }
+            }
+            // move onto next cycle
+            cycle++;
+            // find each active operation that retires on this cycle
+            for (int a = 0; a < active.size(); a++) {
+                // if the op is supposed to end on this cycle
+                if (active.get(a)[1] == cycle) {
+                    int retiredOp = active.get(a)[0];
+                    // add to retired set
+                    retired.add(retiredOp);
+                    // remove from active set
+                    active.remove(a);
+                    // iterate through all nodes that depend on retiredOp
+                    for (Map.Entry<Integer, Node> edgeEntry : graph.get(retiredOp).entrySet()) {
+                        // if node depends on retiredOp
+                        if (edgeEntry.getValue().getDependency() == -1) {
+                            // determine if node is "ready" (all donors have retired)
+                            ready = 1;
+                            for (Map.Entry<Integer, Node> otherEdgeEntry : graph.get(edgeEntry.getKey()).entrySet()) {
+                                // if the edge is a donor
+                                if (otherEdgeEntry.getValue().getDependency() == 1) {
+                                    // if the donor is NOT retired
+                                    if (retired.contains(otherEdgeEntry.getKey())) {
+                                        ready = 0;
+                                    }
+                                }
+                            }
+                            if (ready == 1) {
+                                sortOp(edgeEntry.getKey(), readyF0, readyF1, readyOutput, readyMisc);
+                            }
+                        } else {
+                            continue;
+                        }    
+                    }
+
+                }
+            }
         }
 
     }
 
-    public static int[] pickOps (ArrayList<Integer> ready) {
+    /**
+     * Sorts op into appropriate ready set
+     * @param op 
+     * @param readyF0
+     * @param readyF1
+     * @param readyOutput
+     * @param readyMisc
+     */
+    public static void sortOp (int op, ArrayList<Integer> readyF0, ArrayList<Integer> readyF1, ArrayList<Integer> readyOutput, ArrayList<Integer> readyMisc) {
+        int opCode = DGToIR[op].getOperation();
+        if (opCode == 0 || opCode == 2) { // load or store
+            readyF0.add(op);
+        } else if (opCode == 5) { // mult
+            readyF1.add(op);
+        } else if (opCode == 8) {
+            readyOutput.add(op);
+        } else {
+            readyMisc.add(op);
+        }
+    }
+
+    public static int[] pickOp (ArrayList<Integer> readyF0, ArrayList<Integer> readyF1, ArrayList<Integer> readyOutput, ArrayList<Integer> readyMisc) {
+        // never looking at the active set
+        // FIRST priority is looking to see if there's anything in F0 or F1 bc those take the longest
+        int maxP = 0;
+        int maxOp = -1;
+        int maxIdx = -1;
+        int[] pickedOps = new int[] {-1, -1};
+        int output0 = 0;
+        // grabbing highest priority op for f0
+        if (readyF0.size() > 0) { // if there are any high latency operations that can only fill f0
+            // find max priority load or store op
+            for (int z = 0; z < readyF0.size(); z++) {
+                if (priorities[readyF0.get(z)] > maxP) {
+                    maxP = priorities[readyF0.get(z)];
+                    maxOp = readyF0.get(z);
+                    maxIdx = z;
+                }
+            }
+            // set f0 to highest priority high latency op
+            pickedOps[0] = maxOp;
+            // remove op from readyF0
+            readyF0.remove(maxIdx);
+        } else if (readyOutput.size() > 0) {
+            // reset maxes
+            maxP = 0;
+            maxOp = -1;
+            maxIdx = -1;
+            // find max priority output op
+            for (int o = 0; o < readyOutput.size(); o++) {
+                if (priorities[readyOutput.get(o)] > maxP) {
+                    maxP = priorities[readyOutput.get(o)];
+                    maxOp = readyOutput.get(o);
+                    maxIdx = o;
+                }
+            }
+            // set f0 to highest priority output op
+            pickedOps[0] = maxOp;
+            // indicate that the singular output for the cycle has been chosen
+            output0 = 1;
+            // remove op from readyOutput
+            readyOutput.remove(maxIdx);
+        } else if (readyMisc.size() > 0) {
+            // reset maxes
+            maxP = 0;
+            maxOp = -1;
+            maxIdx = -1;
+            // find max priority output op
+            for (int m = 0; m < readyMisc.size(); m++) {
+                if (priorities[readyMisc.get(m)] > maxP) {
+                    maxP = priorities[readyMisc.get(m)];
+                    maxOp = readyMisc.get(m);
+                    maxIdx = m;
+                }
+            }
+            // set f0 to highest priority misc op
+            pickedOps[0] = maxOp;
+            // remove op from readyMisc
+            readyMisc.remove(maxIdx);
+        }
+
+        // grabbing highest priority op for f1
+        if (readyF1.size() > 0) { // if there are any high latency operations that can only fill f1
+            // reset maxes
+            maxP = 0;
+            maxOp = -1;
+            maxIdx = -1;
+            // find max priority op
+            for (int z = 0; z < readyF0.size(); z++) {
+                if (priorities[readyF0.get(z)] > maxP) {
+                    maxP = priorities[readyF0.get(z)];
+                    maxOp = readyF0.get(z);
+                    maxIdx = z;
+                }
+            }
+            // set f1 to the highest priority high latency op
+            pickedOps[1] = maxOp;
+            // remove op from readyF1
+            readyF1.remove(maxIdx);
+        } else if (output0 == 0 && readyOutput.size() > 0) {
+            // reset maxes
+            maxP = 0;
+            maxOp = -1;
+            maxIdx = -1;
+            // find max priority output op
+            for (int o = 0; o < readyOutput.size(); o++) {
+                if (priorities[readyOutput.get(o)] > maxP) {
+                    maxP = priorities[readyOutput.get(o)];
+                    maxOp = readyOutput.get(o);
+                    maxIdx = o;
+                }
+            }
+            // set f1 to highest priority output op
+            pickedOps[1] = maxOp;
+            // remove op from readyOutput
+            readyOutput.remove(maxIdx);
+        } else if (readyMisc.size() > 0) {
+            // reset maxes
+            maxP = 0;
+            maxOp = -1;
+            maxIdx = -1;
+            // find max priority output op
+            for (int m = 0; m < readyMisc.size(); m++) {
+                if (priorities[readyMisc.get(m)] > maxP) {
+                    maxP = priorities[readyMisc.get(m)];
+                    maxOp = readyMisc.get(m);
+                    maxIdx = m;
+                }
+            }
+            // set f1 to highest priority misc op
+            pickedOps[1] = maxOp;
+            // remove op from readyMisc
+            readyMisc.remove(maxIdx);
+        }
+
+        return pickedOps;
         
-        return null;
     }
 }
