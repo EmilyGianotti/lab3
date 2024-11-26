@@ -473,14 +473,16 @@ public class Scheduler {
                                 if (otherEdgeEntry.getValue().getDependency() == 1) {
                                     // if the donor is NOT retired
                                     if (retired.contains(otherEdgeEntry.getKey())) {
+                                        // then the other node is not ready
                                         ready = 0;
                                     }
                                 }
                             }
+                            // if the dependent node is ready, then add it to the appropriate ready set
                             if (ready == 1) {
                                 sortOp(edgeEntry.getKey(), readyF0, readyF1, readyOutput, readyMisc);
                             }
-                        } else {
+                        } else { // otherwise move onto the next dependent node
                             continue;
                         }    
                     }
@@ -625,8 +627,6 @@ public class Scheduler {
             // remove op from readyMisc
             readyMisc.remove(maxIdx);
         }
-
         return pickedOps;
-        
     }
 }
