@@ -393,25 +393,5 @@ public class Scheduler {
                 }
             }
         }
-        // if the root has a priority AND that current priority + latency is less than what is currently stored in node (skip)
-        // otherwise, priority is stored in dictionary
-
-
-        // // retrieve all nodes connected to current node
-        // Map<Integer, Node> edgeNodes = graph.get(node);
-        // // iterate over all connected nodes
-        // for (Map.Entry<Integer, Node> edgeEntry : edgeNodes.entrySet()) {
-        //     // Check if edge is forward or reverse (we're only considering forward edges)
-        //     Node otherNode = edgeEntry.getValue();
-        //     // If the node is valid, we need to check if its latency < the new latency
-        //     if (otherNode.getPriority() < (otherNode.getPriority() + latency)) {
-        //         otherNode.setPriority(otherNode.getPriority() + latency);
-        //     } else {
-        //         // We've already maxed out this path
-        //         continue;
-        //     }
-        //     // Recurse on valid edges
-        //     prioritize(edgeEntry.getKey(), otherNode.getPriority());
-        // }
     }
 }
