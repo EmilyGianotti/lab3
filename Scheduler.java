@@ -423,7 +423,18 @@ public class Scheduler {
         return leaves;
     }
 
-    public static void schedule () {
+    public static void schedule (ArrayList<Integer> ready) {
+        int cycle = 1;
+        ArrayList<int[]> active = new ArrayList<int[]>();
 
+        while(ready.size() + active.size() != 0) {
+
+        }
+
+    }
+
+    public static int[] pickOps (ArrayList<Integer> ready) {
+        
+        return null;
     }
 }
