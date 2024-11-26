@@ -76,7 +76,8 @@ public class Scheduler {
             priorities = new int[graph.size()];
             prioritize(roots);
             drawGraph(graph);
-            System.out.println(java.util.Arrays.toString(priorities));
+            // System.out.println(java.util.Arrays.toString(priorities));
+            schedule(leaves);
         } catch (Exception e) {
             System.err.println("ERROR:");
             e.printStackTrace();
@@ -431,8 +432,6 @@ public class Scheduler {
         ArrayList<Integer> readyOutput = new ArrayList<Integer>();
         ArrayList<Integer> readyMisc = new ArrayList<Integer>();
         ArrayList<Integer> retired = new ArrayList<Integer>();
-        int[] f0 = new int[2];
-        int[] f1 = new int[2];
         int[] pickedOps;
         int ready = 1;
 
@@ -522,6 +521,7 @@ public class Scheduler {
         int maxIdx = -1;
         int[] pickedOps = new int[] {-1, -1};
         int output0 = 0;
+        String f0, f1;
         // grabbing highest priority op for f0
         if (readyF0.size() > 0) { // if there are any high latency operations that can only fill f0
             // find max priority load or store op
@@ -627,6 +627,17 @@ public class Scheduler {
             // remove op from readyMisc
             readyMisc.remove(maxIdx);
         }
+        if (pickedOps[0] == -1) {
+            f0 = "nop";
+        } else {
+            f0 = DGToIR[pickedOps[0]].printILOCCP1();
+        }
+        if (pickedOps[1] == -1) {
+            f1 = "nop";
+        } else {
+            f1 = DGToIR[pickedOps[1]].printILOCCP1();
+        }
+        System.out.println("[\t" + f0 + "\t;\t" + f1 + "\t]");
         return pickedOps;
     }
 }
