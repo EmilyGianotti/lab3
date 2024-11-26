@@ -303,7 +303,6 @@ public class Scheduler {
     public static void graphToString(Map<Integer, Map<Integer, Node>> graph) {
         for(Map.Entry<Integer, Map<Integer, Node>> nodeEntry : graph.entrySet()) {
             System.out.println("Node " + nodeEntry.getKey() + "\t" + DGToIR[nodeEntry.getKey()].printILOCCP1());
-            // Integer nodeLine = nodeEntry.getKey();
             for (Map.Entry<Integer, Node> edgeEntry : nodeEntry.getValue().entrySet()) {
                 Integer otherNodeLine = edgeEntry.getKey();
                 Node otherNode = edgeEntry.getValue();
@@ -356,12 +355,9 @@ public class Scheduler {
 
     /**
      * DFS tree-walk algorithm that computes latency-weighted distance priorities of nodes in graph
-     * @param roots integer representing a node in the ILOC block dependency graph
-     * @param latency
-     * @param priorities
+     * @param roots ArrayList<Integer> representing the root nodes in the ILOC block dependency graph
      */
     public static void prioritize(ArrayList<Integer> roots) {
-        // TODO: Do this ITERATIVELY
         // System.out.println("heheheheheh sorcery! concoction! witch! truman it's a show good afternoon good evening and goodnight heheheheh");
         Stack<int[]> stack = new Stack<int[]>();
         int node = 0;
@@ -393,5 +389,9 @@ public class Scheduler {
                 }
             }
         }
+    }
+
+    public static void schedule () {
+
     }
 }
