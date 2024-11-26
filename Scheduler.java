@@ -72,6 +72,7 @@ public class Scheduler {
             graph = buildGraph();
             graphToString(graph);
             ArrayList<Integer> roots = findRoots(graph);
+            ArrayList<Integer> leaves = findLeaves(graph);
             priorities = new int[graph.size()];
             prioritize(roots);
             drawGraph(graph);
@@ -389,6 +390,37 @@ public class Scheduler {
                 }
             }
         }
+    }
+
+
+    /**
+     * Finds any dependent (all nodes depend on them) nodes in graph
+     * @param graph Map<Integer, Map<Integer, Node>> that represents dependencies between ILOC ops in a given block
+     * @return an ArrayList of integers that represent any dependent nodes in graph
+     */
+    public static ArrayList<Integer> findLeaves(Map<Integer, Map<Integer, Node>> graph) {
+        ArrayList<Integer> leaves = new ArrayList<Integer>();
+        int dependent;
+        for(Map.Entry<Integer, Map<Integer, Node>> nodeEntry : graph.entrySet()) {
+            dependent = 1;
+            for (Map.Entry<Integer, Node> edgeEntry : nodeEntry.getValue().entrySet()) {
+                // if there is a reverse edge in the current node's POV (a forward edge from another node)
+                if (edgeEntry.getValue().getDependency() == 1) {
+                    // the node is not dependent
+                    dependent = 0;
+                    break;
+                }
+            }
+            // check independence for root
+            if (dependent == 1) {
+                leaves.add(nodeEntry.getKey());
+            }
+        }
+        System.out.println("leaves");
+        System.out.println(Integer.toString(leaves.size()));
+        System.out.println(Integer.toString(leaves.get(0)));
+        System.out.println(Integer.toString(leaves.get(1)));
+        return leaves;
     }
 
     public static void schedule () {
