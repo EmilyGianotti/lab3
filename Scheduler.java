@@ -14,6 +14,7 @@ public class Scheduler {
     public static InternalRep DGToIR[];
     public static Integer latencies[] = {6, 1, 6, 1, 1, 3, 1, 1, 1, 1};
     public static Map<Integer, Map<Integer, Node>> graph;
+    public static int priorities[];
 
     public static void main(String[] args) throws Exception {
         int i = 0;
@@ -70,11 +71,11 @@ public class Scheduler {
             DGToIR = new InternalRep[internalOpList.size()];
             graph = buildGraph();
             graphToString(graph);
-            drawGraph(graph);
             ArrayList<Integer> roots = findRoots(graph);
-            for(int r = 0; r < roots.size(); r++) {
-                prioritize(roots.get(r), 0);
-            }
+            priorities = new int[graph.size()];
+            prioritize(roots);
+            drawGraph(graph);
+            System.out.println(java.util.Arrays.toString(priorities));
         } catch (Exception e) {
             System.err.println("ERROR:");
             e.printStackTrace();
@@ -125,10 +126,10 @@ public class Scheduler {
                         // add an edge from o use to the def node in M(VRj)
                         defOp = M[useOne];
                         defLine = defOp.getLine();
-                        defNode = new Node(defOp.getOperation(), latencies[defOp.getOperation()], 1);
+                        defNode = new Node(1, latencies[defOp.getOperation()], 1);
                         currentEdges.put(defLine, defNode);
                         // add reverse edge from def node to o use
-                        DG.get(defLine).put(line, new Node(currOp, latencies[currOp], -1));
+                        DG.get(defLine).put(line, new Node(1, latencies[currOp], -1));
                     }
                 }
 
@@ -140,72 +141,73 @@ public class Scheduler {
                         defOp = M[useTwo];
                         defLine = defOp.getLine();
                         System.out.println("defline is " + Integer.toString(defLine));
-                        defNode = new Node(defOp.getOperation(), latencies[defOp.getOperation()], 1);
+                        defNode = new Node(1, latencies[defOp.getOperation()], 1);
                         currentEdges.put(defLine, defNode);
                         // add reverse edge from def node to o use
                         DG.toString();
-                        DG.get(defLine).put(line, new Node(currOp, latencies[currOp], -1));
+                        DG.get(defLine).put(line, new Node(1, latencies[currOp], -1));
                     }
                 }
 
                 // store
                 if (currOp == 2) {
-                    int useThree = current.getOperand2()[1];
+                    int useThree = current.getOperand3()[1];
                     if (useThree != -1) {
                         if (useThree != -1) {
                             // add an edge from o to the node in M(VRj)
                             defOp = M[useThree];
                             defLine = defOp.getLine();
-                            defNode = new Node(defOp.getOperation(), latencies[defOp.getOperation()], 1);
+                            defNode = new Node(1, latencies[defOp.getOperation()], 1);
                             currentEdges.put(defLine, defNode);
                             // add reverse edge from def node to o use
-                            DG.get(defLine).put(line, new Node(currOp, latencies[currOp], -1));
+                            DG.get(defLine).put(line, new Node(1, latencies[currOp], -1));
                         }
                     }
                 }
 
                 // if o is a load, store, or output
                 if (currOp == 0) { // load
-                    // add edge from op to most recent store
-                    if (stores.size() > 0) {
-                        // want line, type, latency, and direction of most recent store
+                    // add conflict edge from load op to most recent store
+                    if (stores.size() > 0 && currentEdges.get(stores.get(stores.size()-1)) == null) {
+                        // want line, type(conflict), latency, and direction of most recent store --> conflict
                         currentEdges.put(stores.get(stores.size()-1), 
-                                        new Node(DGToIR[stores.get(stores.size()-1)].getOperation(), 
+                                        new Node(2, 
                                         latencies[DGToIR[stores.get(stores.size()-1)].getOperation()], 1));
-                        // add reverse edge from most recent store to op
-                        DG.get(stores.get(stores.size()-1)).put(line, new Node(currOp, latencies[currOp], -1));
+                        // add reverse conflict edge from most recent store to op
+                        DG.get(stores.get(stores.size()-1)).put(line, new Node(2, latencies[currOp], -1));
                     }
                     loads.add(line);
                 }
                 
                 if (currOp == 2) { // store
-                    // add edge from op to most recent store
-                    if (stores.size() > 0) {
+                    // add serialization edge from store op to most recent store
+                    if (stores.size() > 0 && currentEdges.get(stores.get(stores.size()-1)) == null) {
                         // want line, type, latency, and direction of most recent store
                         currentEdges.put(stores.get(stores.size()-1), 
-                                        new Node(DGToIR[stores.get(stores.size()-1)].getOperation(), 
-                                        latencies[DGToIR[stores.get(stores.size()-1)].getOperation()], 1));
+                                        new Node(3, 1, 1));
                         // add reverse edge from most recent store to op
-                        DG.get(stores.get(stores.size()-1)).put(line, new Node(currOp, latencies[currOp], -1));
+                        DG.get(stores.get(stores.size()-1)).put(line, new Node(3, 1, -1));
                     }
-                    // add edges from op to each previous load
+                    // add serialization edges from op to each previous load
                     if (loads.size() > 0) {
                         for (int i = 0; i < loads.size(); i++) {
-                            // want line, type, latency, and direction of load
-                            currentEdges.put(loads.get(i), new Node(DGToIR[loads.get(i)].getOperation(),
-                                            latencies[DGToIR[loads.get(i)].getOperation()], 1));
-                            // add reverse edge from most recent store to op
-                            DG.get(loads.get(i)).put(line, new Node(currOp, latencies[currOp], -1));
+                            if (currentEdges.get(loads.get(i)) == null) {
+                                // want line, type, latency, and direction of load
+                                currentEdges.put(loads.get(i), new Node(3,1, 1));
+                                // add reverse edge from most recent store to op
+                                DG.get(loads.get(i)).put(line, new Node(3, 1, -1));
+                            }
                         }
                     }
-                    // add edges from op to each previous output
+                    // add serialization edges from op to each previous output
                     if (outputs.size() > 0) {
                         for (int i = 0; i < outputs.size(); i++) {
-                            // want line, type, latency, and direction of load
-                            currentEdges.put(outputs.get(i), new Node(DGToIR[outputs.get(i)].getOperation(),
-                                            latencies[DGToIR[outputs.get(i)].getOperation()], 1));
-                            // add reverse edge from most recent store to op
-                            DG.get(outputs.get(i)).put(line, new Node(currOp, latencies[currOp], -1));
+                            if (currentEdges.get(outputs.get(i)) == null) {
+                                // want line, type, latency, and direction of load
+                                currentEdges.put(outputs.get(i), new Node(3, 1, 1));
+                                // add reverse edge from most recent store to op 
+                                DG.get(outputs.get(i)).put(line, new Node(3, 1, -1));
+                            }
                         }
                     }
                     stores.add(line);
@@ -213,23 +215,22 @@ public class Scheduler {
 
                 if (currOp == 8) { //output
                     // add edge from op to most recent store
-                    if (stores.size() > 0) {
+                    if (stores.size() > 0 && currentEdges.get(stores.get(stores.size()-1)) == null) {
                         // want line, type, latency, and direction of most recent store
                         currentEdges.put(stores.get(stores.size()-1), 
-                                        new Node(DGToIR[stores.get(stores.size()-1)].getOperation(), 
+                                        new Node(2, 
                                         latencies[DGToIR[stores.get(stores.size()-1)].getOperation()], 1));
+                        // add reverse edge from most recent store to op
+                    DG.get(stores.get(stores.size()-1)).put(line, new Node(2, latencies[currOp], -1));
                     }
-                    // add reverse edge from most recent store to op
-                    DG.get(stores.get(stores.size()-1)).put(line, new Node(currOp, latencies[currOp], -1));
 
                     // add edge from op to most recent output
-                    if (outputs.size() > 0) {
+                    if (outputs.size() > 0 && currentEdges.get(outputs.get(outputs.size()-1)) == null) {
                         // want line, type, latency, and direction of most recent output
                         currentEdges.put(outputs.get(outputs.size()-1), 
-                                        new Node(DGToIR[outputs.get(outputs.size()-1)].getOperation(), 
-                                        latencies[DGToIR[outputs.get(outputs.size()-1)].getOperation()], 1));
+                                        new Node(3, 1, 1));
                         // add reverse edge from most recent store to op
-                        DG.get(outputs.get(outputs.size()-1)).put(line, new Node(currOp, latencies[currOp], -1));
+                        DG.get(outputs.get(outputs.size()-1)).put(line, new Node(3, 1, -1));
                     }
                 }
                 // insert current node and it's associated edges into the directed graph
@@ -268,26 +269,22 @@ public class Scheduler {
             for(Map.Entry<Integer, Map<Integer, Node>> nodeEntry : graph.entrySet()) {
                 Integer nodeLine = nodeEntry.getKey();
                 // create node for current OP
-                graphWriter.write(nodeLine.toString() + " [label = \"" + nodeLine.toString() + "\n" 
-                                + DGToIR[nodeLine].printILOCCP1() + "\"];\n");
+                graphWriter.write(nodeLine.toString() + " [label = \"" + nodeLine.toString() + ": " 
+                                + DGToIR[nodeLine].printILOCCP1() + "\nP: " + Integer.toString(priorities[nodeLine]) + "\"];\n");
                 // edge work, will put in a string to concatenate at the end
                 for (Map.Entry<Integer, Node> edgeEntry : nodeEntry.getValue().entrySet()) {
                     Integer otherNodeLine = edgeEntry.getKey();
                     Node otherNode = edgeEntry.getValue();
                     Integer edgeDirection = otherNode.getDependency();
-                    if (edgeDirection == 1) {
-                        edges = edges + nodeLine.toString() + " -> " + otherNodeLine.toString() + "[color=\"blue\"];\n";
-                    } else {
-                        edges = edges + nodeLine.toString() + " -> " + otherNodeLine.toString() + "[color=\"red\"];\n";
+                    if (edgeDirection == -1) {
+                        // edges = edges + nodeLine.toString() + " -> " + otherNodeLine.toString() + "[color=\"firebrick3\"];\n";
+                    } else if (otherNode.getType() == 3) { // serialization
+                        edges = edges + nodeLine.toString() + " -> " + otherNodeLine.toString() + "[label=\" Serialization\" color=\"forestgreen\"];\n";
+                    } else if (otherNode.getType() == 2) { // conflict
+                        edges = edges + nodeLine.toString() + " -> " + otherNodeLine.toString() + "[label=\" Conflict\" color=\"darkgoldenrod1\"];\n";
+                    } else if (otherNode.getType() == 1) { // data
+                        edges = edges + nodeLine.toString() + " -> " + otherNodeLine.toString() + "[label=\" Data\" color=\"dodgerblue\"];\n";
                     }
-                    
-                    // if (edgeDirection == 1) {
-                    //     System.out.println("forward edge from " + nodeLine.toString() + " to " + otherNodeLine.toString());
-                    //     edges = edges + nodeLine.toString() + " -> " + otherNodeLine.toString() + ";\n";
-                    // } else {
-                    //     System.out.println("reverse edge from " + nodeLine.toString() + " to " + otherNodeLine.toString());
-                    //     edges = edges + otherNodeLine.toString() + " -> " + nodeLine.toString() + ";\n";
-                    // }
                 }
             }
             // add edges to bottom of file
@@ -311,12 +308,19 @@ public class Scheduler {
                 Integer otherNodeLine = edgeEntry.getKey();
                 Node otherNode = edgeEntry.getValue();
                 Integer edgeDirection = otherNode.getDependency();
-                if (edgeDirection == 1) {
-                    System.out.println("forward edge to " + otherNodeLine.toString());
-                } else {
-                    System.out.println("reverse edge to " + otherNodeLine.toString());
+                if (edgeDirection == 1 && otherNode.getType() == 3) {
+                    System.out.println("forward serialization edge to " + otherNodeLine.toString());
+                } else if (edgeDirection == 1 && otherNode.getType() == 2) {
+                    System.out.println("forward conflict edge to " + otherNodeLine.toString());
+                } else if (edgeDirection == 1 && otherNode.getType() == 1) {
+                    System.out.println("forward data edge to " + otherNodeLine.toString());
+                } else if (edgeDirection == -1 && otherNode.getType() == 3) {
+                    System.out.println("reverse serialization edge to " + otherNodeLine.toString());
+                } else if (edgeDirection == -1 && otherNode.getType() == 2) {
+                    System.out.println("reverse conflict edge to " + otherNodeLine.toString());
+                } else if (edgeDirection == -1 && otherNode.getType() == 1) {
+                    System.out.println("reverse data edge to " + otherNodeLine.toString());
                 }
-                System.out.println("priority of " + Integer.toString(otherNode.getPriority()));
             }
             System.out.println("\n");
         }
@@ -345,25 +349,60 @@ public class Scheduler {
                 roots.add(nodeEntry.getKey());
             }
         }
+        System.out.println(Integer.toString(roots.size()));
+        System.out.println(Integer.toString(roots.get(0)));
         return roots;
     }
 
     /**
      * DFS tree-walk algorithm that computes latency-weighted distance priorities of nodes in graph
-     * @param node an integer representing a node in the ILOC block dependency graph
+     * @param roots integer representing a node in the ILOC block dependency graph
      * @param latency
+     * @param priorities
      */
-    public static void prioritize(int node, int latency) {
+    public static void prioritize(ArrayList<Integer> roots) {
         // TODO: Do this ITERATIVELY
-        System.out.println("heheheheheh sorcery! concoction! witch! truman it's a show good afternoon good evening and goodnight heheheheh");
-        
+        // System.out.println("heheheheheh sorcery! concoction! witch! truman it's a show good afternoon good evening and goodnight heheheheh");
+        Stack<int[]> stack = new Stack<int[]>();
+        int node = 0;
+        int latency = 0;
+        for (int r = 0; r < roots.size(); r++) {
+            // push root node onto stack
+            stack.push(new int[] {roots.get(r), latencies[DGToIR[roots.get(r)].getOperation()]});
+            // array representing node # and latency
+            int[] nodeInfo;
+            // while there's still a graph to explore
+            while (!stack.isEmpty()) {
+                // visit next node
+                nodeInfo = stack.pop();
+                node = nodeInfo[0];
+                latency = nodeInfo[1];
+                // if the current latency weight is less than what we've accumulated so far
+                if (priorities[node] <= latency) {
+                    // set priority of node to accumulated latency
+                    priorities[node] = latency;
+                    System.out.println("priority for node " + Integer.toString(node) + " is " + Integer.toString(latency) + "\n");
+                } else { // we've already maximized this part of the graph, onto the next node!
+                    continue;
+                }
+                // go through all nodes that current node has a forward edge to and add them to the stack
+                for (Map.Entry<Integer, Node> edgeEntry : graph.get(node).entrySet()) {
+                    if (edgeEntry.getValue().getDependency() == 1) {
+                        stack.push(new int[] {edgeEntry.getKey(), latency + edgeEntry.getValue().getLatency()});
+                    }
+                }
+            }
+        }
+        // if the root has a priority AND that current priority + latency is less than what is currently stored in node (skip)
+        // otherwise, priority is stored in dictionary
+
+
         // // retrieve all nodes connected to current node
         // Map<Integer, Node> edgeNodes = graph.get(node);
         // // iterate over all connected nodes
         // for (Map.Entry<Integer, Node> edgeEntry : edgeNodes.entrySet()) {
         //     // Check if edge is forward or reverse (we're only considering forward edges)
         //     Node otherNode = edgeEntry.getValue();
-        //     Sytem.
         //     // If the node is valid, we need to check if its latency < the new latency
         //     if (otherNode.getPriority() < (otherNode.getPriority() + latency)) {
         //         otherNode.setPriority(otherNode.getPriority() + latency);

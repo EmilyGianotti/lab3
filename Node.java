@@ -1,31 +1,31 @@
 public class Node {
-    private int type;
-    private int latency;
-    private int dependency;
-    private int priority;
+    private int type; // type of edge
+    private int latency; // latency of edge
+    private int dependency; // direction of edge
     
     public Node() {
         this.type = -1;
         this.latency = -1;
         this.dependency = 0;
-        this.priority = -1;
     }
 
     public Node(int type, int latency, int dependency) {
         this.type = type;
         this.latency = latency;
         this.dependency = dependency;
-        this.priority = -1;
     }
 
+     // 1 = data, 2 = conflict, 3 = serialization
     public int getType() {
         return type;
     }
 
+    // 1 = data, 2 = conflict, 3 = serialization
     public void setType(int type) {
         this.type = type;
     }
 
+    // 1 = data, 2 = conflict, 3 = serialization
     public int getLatency() {
         return latency;
     }
@@ -34,20 +34,14 @@ public class Node {
         this.latency = latency;
     }
 
+    // 1 = forward, -1 = reverse
     public int getDependency() {
         return dependency;
     }
 
+    // 1 = forward, -1 = reverse
     public void setDependency(int dependency) {
         this.dependency = dependency;
-    }
-
-    public int getPriority() {
-        return priority;
-    }
-
-    public void setPriority(int priority) {
-        this.priority = priority;
     }
 
     public String toString() {
