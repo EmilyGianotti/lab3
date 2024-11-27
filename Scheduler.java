@@ -427,6 +427,7 @@ public class Scheduler {
     public static void schedule (ArrayList<Integer> leaves) {
         int cycle = 1;
         ArrayList<int[]> active = new ArrayList<int[]>();
+        ArrayList<int[]> retiredActive = new ArrayList<int[]>();
         ArrayList<Integer> readyF0 = new ArrayList<Integer>();
         ArrayList<Integer> readyF1 = new ArrayList<Integer>();
         ArrayList<Integer> readyOutput = new ArrayList<Integer>();
@@ -442,54 +443,75 @@ public class Scheduler {
 
         // schedule all ops
         while(readyF0.size() + readyF1.size() + readyOutput.size() + readyMisc.size() + active.size() != 0) {
+            // System.out.println("onto the next cycle");
+            // System.out.println("readyF0: " + readyF0.toString());
+            // System.out.println("readyF1: " + readyF1.toString());
+            // System.out.println("readyOutput: " + readyOutput.toString());
+            // System.out.println("readyMisc: " + readyMisc.toString());
             // pick ops for each functional unit
             pickedOps = pickOp(readyF0, readyF1, readyOutput, readyMisc);
             // move ops from ready set to active set
             for (int i = 0; i < pickedOps.length; i++) {
                 if(pickedOps[i] != -1) {
-                    active.add(new int[] {pickedOps[i], cycle + latencies[pickedOps[i]]});
+                    active.add(new int[] {pickedOps[i], cycle + latencies[DGToIR[pickedOps[i]].getOperation()]});
                 }
             }
             // move onto next cycle
             cycle++;
+            // System.out.println("The size of active is " + Integer.toString(active.size()));
+            // System.out.println(java.util.Arrays.toString(active.get(0)));
+            retiredActive.clear();
             // find each active operation that retires on this cycle
             for (int a = 0; a < active.size(); a++) {
-                // if the op is supposed to end on this cycle
                 if (active.get(a)[1] == cycle) {
-                    int retiredOp = active.get(a)[0];
-                    // add to retired set
-                    retired.add(retiredOp);
-                    // remove from active set
-                    active.remove(a);
-                    // iterate through all nodes that depend on retiredOp
-                    for (Map.Entry<Integer, Node> edgeEntry : graph.get(retiredOp).entrySet()) {
-                        // if node depends on retiredOp
-                        if (edgeEntry.getValue().getDependency() == -1) {
-                            // determine if node is "ready" (all donors have retired)
-                            ready = 1;
-                            for (Map.Entry<Integer, Node> otherEdgeEntry : graph.get(edgeEntry.getKey()).entrySet()) {
-                                // if the edge is a donor
-                                if (otherEdgeEntry.getValue().getDependency() == 1) {
-                                    // if the donor is NOT retired
-                                    if (retired.contains(otherEdgeEntry.getKey())) {
-                                        // then the other node is not ready
-                                        ready = 0;
-                                    }
+                    retiredActive.add(active.get(a));
+                }
+            }
+
+            // go through each active operation at retirement age
+            for (int r = 0; r < retiredActive.size(); r++) {
+                int retiredOp = retiredActive.get(r)[0];
+                // add to retired set
+                retired.add(retiredOp);
+                // remove from active set
+                // System.out.println("Active:");
+                // for(int i = 0; i < active.size(); i++) {
+                //     System.out.println(java.util.Arrays.toString(active.get(i)));
+                // }
+                active.remove(retiredActive.get(r));
+                // System.out.println("Removed " + java.util.Arrays.toString(retiredActive.get(r)));
+                // System.out.println("Active:");
+                // for(int i = 0; i < active.size(); i++) {
+                //     System.out.println(java.util.Arrays.toString(active.get(i)));
+                // }
+                // iterate through all nodes that depend on retiredOp
+                for (Map.Entry<Integer, Node> edgeEntry : graph.get(retiredOp).entrySet()) {
+                    // if node depends on retiredOp
+                    if (edgeEntry.getValue().getDependency() == -1) {
+                        // System.out.println("Found a dependent node " + Integer.toString(edgeEntry.getKey()));
+                        // determine if node is "ready" (all donors have retired)
+                        ready = 1;
+                        for (Map.Entry<Integer, Node> otherEdgeEntry : graph.get(edgeEntry.getKey()).entrySet()) {
+                            // if the edge is a donor
+                            if (otherEdgeEntry.getValue().getDependency() == 1) {
+                                // if the donor is NOT retired
+                                // System.out.println("Node " + Integer.toString(otherEdgeEntry.getKey()) + " is a donor");
+                                if (!retired.contains(otherEdgeEntry.getKey())) {
+                                    // System.out.println("Node " + Integer.toString(otherEdgeEntry.getKey()) + " is retired");
+                                    // then the other node is not ready
+                                    ready = 0;
                                 }
                             }
-                            // if the dependent node is ready, then add it to the appropriate ready set
-                            if (ready == 1) {
-                                sortOp(edgeEntry.getKey(), readyF0, readyF1, readyOutput, readyMisc);
-                            }
-                        } else { // otherwise move onto the next dependent node
-                            continue;
-                        }    
-                    }
-
+                        }
+                        // if the dependent node is ready, then add it to the appropriate ready set
+                        if (ready == 1) {
+                            // System.out.println("Dependent node " + Integer.toString(edgeEntry.getKey()) + " is ready.");
+                            sortOp(edgeEntry.getKey(), readyF0, readyF1, readyOutput, readyMisc);
+                        }
+                    } 
                 }
             }
         }
-
     }
 
     /**
@@ -637,7 +659,7 @@ public class Scheduler {
         } else {
             f1 = DGToIR[pickedOps[1]].printILOCCP1();
         }
-        System.out.println("[\t" + f0 + "\t;\t" + f1 + "\t]");
+        System.out.println("[ " + f0 + "\t; " + f1 + " ]");
         return pickedOps;
     }
 }
