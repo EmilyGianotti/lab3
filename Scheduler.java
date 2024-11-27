@@ -67,10 +67,10 @@ public class Scheduler {
             FrontEnd frontEnd = new FrontEnd();
             internalOpList = frontEnd.doParse(br); // parse ILOC block
             internalOpList = Renamer.rename(internalOpList.size(), internalOpList.findMaxSR(), internalOpList);
-            internalOpList.traverseILOC();
+            // internalOpList.traverseILOC();
             DGToIR = new InternalRep[internalOpList.size()];
             graph = buildGraph();
-            graphToString(graph);
+            // graphToString(graph);
             ArrayList<Integer> roots = findRoots(graph);
             ArrayList<Integer> leaves = findLeaves(graph);
             priorities = new int[graph.size()];
@@ -113,16 +113,16 @@ public class Scheduler {
                 // if op defines VRi:
                 if (currOp != 2) {
                     if (current.getOperand3()[1] != -1) {
-                        System.out.println("in def");
+                        // System.out.println("in def");
                         // set M(VRi) to op
-                        System.out.println("def is r" + Integer.toString(current.getOperand3()[1]) + " and line is " + Integer.toString(current.getLine()));
+                        // System.out.println("def is r" + Integer.toString(current.getOperand3()[1]) + " and line is " + Integer.toString(current.getLine()));
                         M[current.getOperand3()[1]] = current;
                     }
 
                 }
                 // for each VRj used in op
                 int useOne = current.getOperand1()[1];
-                System.out.println("in use 1");
+                // System.out.println("in use 1");
                 if (useOne != -1) {
                     if (useOne != -1) {
                         // add an edge from o use to the def node in M(VRj)
@@ -136,13 +136,13 @@ public class Scheduler {
                 }
 
                 int useTwo = current.getOperand2()[1];
-                System.out.println("in use 2");
+                // System.out.println("in use 2");
                 if (useTwo != -1) {
                     if (useTwo != -1) {
                         // add an edge from o to the node in M(VRj)
                         defOp = M[useTwo];
                         defLine = defOp.getLine();
-                        System.out.println("defline is " + Integer.toString(defLine));
+                        // System.out.println("defline is " + Integer.toString(defLine));
                         defNode = new Node(1, latencies[defOp.getOperation()], 1);
                         currentEdges.put(defLine, defNode);
                         // add reverse edge from def node to o use
@@ -248,7 +248,7 @@ public class Scheduler {
                     outputs.add(line);
                 }
             }
-            System.out.println("made it past " + current.printILOCCP1() + "\n");
+            // System.out.println("made it past " + current.printILOCCP1() + "\n");
             current = current.next;
             line++;
         }
@@ -304,7 +304,7 @@ public class Scheduler {
      */
     public static void graphToString(Map<Integer, Map<Integer, Node>> graph) {
         for(Map.Entry<Integer, Map<Integer, Node>> nodeEntry : graph.entrySet()) {
-            System.out.println("Node " + nodeEntry.getKey() + "\t" + DGToIR[nodeEntry.getKey()].printILOCCP1());
+            // System.out.println("Node " + nodeEntry.getKey() + "\t" + DGToIR[nodeEntry.getKey()].printILOCCP1());
             for (Map.Entry<Integer, Node> edgeEntry : nodeEntry.getValue().entrySet()) {
                 Integer otherNodeLine = edgeEntry.getKey();
                 Node otherNode = edgeEntry.getValue();
@@ -350,8 +350,8 @@ public class Scheduler {
                 roots.add(nodeEntry.getKey());
             }
         }
-        System.out.println(Integer.toString(roots.size()));
-        System.out.println(Integer.toString(roots.get(0)));
+        // System.out.println(Integer.toString(roots.size()));
+        // System.out.println(Integer.toString(roots.get(0)));
         return roots;
     }
 
@@ -379,7 +379,7 @@ public class Scheduler {
                 if (priorities[node] <= latency) {
                     // set priority of node to accumulated latency
                     priorities[node] = latency;
-                    System.out.println("priority for node " + Integer.toString(node) + " is " + Integer.toString(latency) + "\n");
+                    // System.out.println("priority for node " + Integer.toString(node) + " is " + Integer.toString(latency) + "\n");
                 } else { // we've already maximized this part of the graph, onto the next node!
                     continue;
                 }
@@ -417,10 +417,10 @@ public class Scheduler {
                 leaves.add(nodeEntry.getKey());
             }
         }
-        System.out.println("leaves");
-        System.out.println(Integer.toString(leaves.size()));
-        System.out.println(Integer.toString(leaves.get(0)));
-        System.out.println(Integer.toString(leaves.get(1)));
+        // System.out.println("leaves");
+        // System.out.println(Integer.toString(leaves.size()));
+        // System.out.println(Integer.toString(leaves.get(0)));
+        // System.out.println(Integer.toString(leaves.get(1)));
         return leaves;
     }
 
