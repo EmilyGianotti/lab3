@@ -74,10 +74,7 @@ public class Scheduler {
             ArrayList<Integer> roots = findRoots(graph);
             ArrayList<Integer> leaves = findLeaves(graph);
             priorities = new int[graph.size()];
-            for (int x = 0; x < priorities.length; x++) {
-                priorities[x] = 1;
-            }
-            // prioritize(roots);
+            prioritize(roots);
             drawGraph(graph);
             // System.out.println(java.util.Arrays.toString(priorities));
             schedule(leaves);
