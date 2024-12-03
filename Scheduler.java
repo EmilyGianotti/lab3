@@ -75,7 +75,7 @@ public class Scheduler {
             ArrayList<Integer> leaves = findLeaves(graph);
             priorities = new int[graph.size()];
             for(int q = 0; q < priorities.length; q++) {
-                priorities[q] = 0;
+                priorities[q] = 1;
             }
             // prioritize(roots);
             drawGraph(graph);
