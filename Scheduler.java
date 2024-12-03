@@ -73,9 +73,10 @@ public class Scheduler {
             // graphToString(graph);
             ArrayList<Integer> roots = findRoots(graph);
             ArrayList<Integer> leaves = findLeaves(graph);
+            // System.out.println("wow found the leaves");
             priorities = new int[graph.size()];
             prioritize(roots);
-            drawGraph(graph);
+            // drawGraph(graph);
             // System.out.println(java.util.Arrays.toString(priorities));
             schedule(leaves);
         } catch (Exception e) {
@@ -89,6 +90,7 @@ public class Scheduler {
      * @return Map whose keys are integers that represent X and values are Maps of integers to nodes that represent Y
      */
     public static Map<Integer, Map<Integer, Node>> buildGraph() {
+        // System.out.println("Building graph at " + Long.toString(System.currentTimeMillis()));
         // create an empty map, M
         InternalRep M[] = new InternalRep[internalOpList.getMaxVR()+1];
         Map<Integer, Map<Integer, Node>> DG = new HashMap<>();
@@ -111,7 +113,7 @@ public class Scheduler {
             if (currOp != 9) {
                 Map<Integer, Node> currentEdges = new HashMap<>();
                 // if op defines VRi:
-                if (currOp != 2) {
+                if (currOp != 2) { // NOT store
                     if (current.getOperand3()[1] != -1) {
                         // System.out.println("in def");
                         // set M(VRi) to op
@@ -146,7 +148,7 @@ public class Scheduler {
                         defNode = new Node(1, latencies[defOp.getOperation()], 1);
                         currentEdges.put(defLine, defNode);
                         // add reverse edge from def node to o use
-                        DG.toString();
+                        // DG.toString();
                         DG.get(defLine).put(line, new Node(1, latencies[currOp], -1));
                     }
                 }
@@ -192,6 +194,7 @@ public class Scheduler {
                     }
                     // add serialization edges from op to each previous load
                     if (loads.size() > 0) {
+                        // System.out.println("Serializing to each previous load at " + Long.toString(System.currentTimeMillis()));
                         for (int i = 0; i < loads.size(); i++) {
                             if (currentEdges.get(loads.get(i)) == null) {
                                 // want line, type, latency, and direction of load
@@ -203,6 +206,7 @@ public class Scheduler {
                     }
                     // add serialization edges from op to each previous output
                     if (outputs.size() > 0) {
+                        // System.out.println("Serializing to each previous output at " + Long.toString(System.currentTimeMillis()));
                         for (int i = 0; i < outputs.size(); i++) {
                             if (currentEdges.get(outputs.get(i)) == null) {
                                 // want line, type, latency, and direction of load
@@ -333,6 +337,7 @@ public class Scheduler {
      * @return an ArrayList of integers that represent any independent nodes in graph
      */
     public static ArrayList<Integer> findRoots(Map<Integer, Map<Integer, Node>> graph) {
+        // System.out.println("Finding roots at " + Long.toString(System.currentTimeMillis()));
         ArrayList<Integer> roots = new ArrayList<Integer>();
         int independent;
         for(Map.Entry<Integer, Map<Integer, Node>> nodeEntry : graph.entrySet()) {
@@ -360,6 +365,7 @@ public class Scheduler {
      * @param roots ArrayList<Integer> representing the root nodes in the ILOC block dependency graph
      */
     public static void prioritize(ArrayList<Integer> roots) {
+        // System.out.println("Prioritizing graph at " + Long.toString(System.currentTimeMillis()));
         // System.out.println("heheheheheh sorcery! concoction! witch! truman it's a show good afternoon good evening and goodnight heheheheh");
         Stack<int[]> stack = new Stack<int[]>();
         int node = 0;
@@ -400,6 +406,7 @@ public class Scheduler {
      * @return an ArrayList of integers that represent any dependent nodes in graph
      */
     public static ArrayList<Integer> findLeaves(Map<Integer, Map<Integer, Node>> graph) {
+        // System.out.println("Finding leaves at " + Long.toString(System.currentTimeMillis()));
         ArrayList<Integer> leaves = new ArrayList<Integer>();
         int dependent;
         for(Map.Entry<Integer, Map<Integer, Node>> nodeEntry : graph.entrySet()) {
@@ -425,6 +432,7 @@ public class Scheduler {
     }
 
     public static void schedule (ArrayList<Integer> leaves) {
+        // System.out.println("Scheduling at " + Long.toString(System.currentTimeMillis()));
         int cycle = 1;
         ArrayList<int[]> active = new ArrayList<int[]>();
         ArrayList<int[]> retiredActive = new ArrayList<int[]>();
@@ -500,6 +508,7 @@ public class Scheduler {
                                     // System.out.println("Node " + Integer.toString(otherEdgeEntry.getKey()) + " is retired");
                                     // then the other node is not ready
                                     ready = 0;
+                                    break;
                                 }
                             }
                         }
@@ -523,6 +532,7 @@ public class Scheduler {
      * @param readyMisc
      */
     public static void sortOp (int op, ArrayList<Integer> readyF0, ArrayList<Integer> readyF1, ArrayList<Integer> readyOutput, ArrayList<Integer> readyMisc) {
+        // System.out.println("Sorting op at " + Long.toString(System.currentTimeMillis()));
         int opCode = DGToIR[op].getOperation();
         if (opCode == 0 || opCode == 2) { // load or store
             readyF0.add(op);
@@ -536,6 +546,7 @@ public class Scheduler {
     }
 
     public static int[] pickOp (ArrayList<Integer> readyF0, ArrayList<Integer> readyF1, ArrayList<Integer> readyOutput, ArrayList<Integer> readyMisc) {
+        // System.out.println("Picking op at " + Long.toString(System.currentTimeMillis()));
         // never looking at the active set
         // FIRST priority is looking to see if there's anything in F0 or F1 bc those take the longest
         int maxP = 0;
