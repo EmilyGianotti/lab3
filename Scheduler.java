@@ -67,7 +67,7 @@ public class Scheduler {
             FrontEnd frontEnd = new FrontEnd();
             internalOpList = frontEnd.doParse(br); // parse ILOC block
             internalOpList = Renamer.rename(internalOpList.size(), internalOpList.findMaxSR(), internalOpList);
-            // internalOpList.traverseILOC();
+            internalOpList.traverseILOC();
             DGToIR = new InternalRep[internalOpList.size()];
             graph = buildGraph();
             // graphToString(graph);
@@ -489,12 +489,12 @@ public class Scheduler {
                     // if node depends on retiredOp
                     if (edgeEntry.getValue().getDependency() == -1) {
                         // System.out.println("Found a dependent node " + Integer.toString(edgeEntry.getKey()));
-                        // determine if node is "ready" (all donors have retired)
+                        // determine if node is "ready" (all defs have retired)
                         ready = 1;
                         for (Map.Entry<Integer, Node> otherEdgeEntry : graph.get(edgeEntry.getKey()).entrySet()) {
-                            // if the edge is a donor
+                            // if the edge is a def
                             if (otherEdgeEntry.getValue().getDependency() == 1) {
-                                // if the donor is NOT retired
+                                // if the def is NOT retired
                                 // System.out.println("Node " + Integer.toString(otherEdgeEntry.getKey()) + " is a donor");
                                 if (!retired.contains(otherEdgeEntry.getKey())) {
                                     // System.out.println("Node " + Integer.toString(otherEdgeEntry.getKey()) + " is retired");
@@ -548,6 +548,7 @@ public class Scheduler {
         if (readyF0.size() > 0) { // if there are any high latency operations that can only fill f0
             // find max priority load or store op
             for (int z = 0; z < readyF0.size(); z++) {
+                System.out.println("Node " + Integer.toString(readyF0.get(z)) + " w/ priority: " + priorities[readyF0.get(z)]);
                 if (priorities[readyF0.get(z)] > maxP) {
                     maxP = priorities[readyF0.get(z)];
                     maxOp = readyF0.get(z);
@@ -565,6 +566,7 @@ public class Scheduler {
             maxIdx = -1;
             // find max priority output op
             for (int o = 0; o < readyOutput.size(); o++) {
+                System.out.println("Node " + Integer.toString(readyOutput.get(o)) + " w/ priority: " + priorities[readyOutput.get(o)]);
                 if (priorities[readyOutput.get(o)] > maxP) {
                     maxP = priorities[readyOutput.get(o)];
                     maxOp = readyOutput.get(o);
@@ -584,6 +586,7 @@ public class Scheduler {
             maxIdx = -1;
             // find max priority output op
             for (int m = 0; m < readyMisc.size(); m++) {
+                System.out.println("Node " + Integer.toString(readyMisc.get(m)) + " w/ priority: " + priorities[readyMisc.get(m)]);
                 if (priorities[readyMisc.get(m)] > maxP) {
                     maxP = priorities[readyMisc.get(m)];
                     maxOp = readyMisc.get(m);
@@ -603,10 +606,11 @@ public class Scheduler {
             maxOp = -1;
             maxIdx = -1;
             // find max priority op
-            for (int z = 0; z < readyF0.size(); z++) {
-                if (priorities[readyF0.get(z)] > maxP) {
-                    maxP = priorities[readyF0.get(z)];
-                    maxOp = readyF0.get(z);
+            for (int z = 0; z < readyF1.size(); z++) {
+                System.out.println("Node " + Integer.toString(readyF1.get(z)) + " w/ priority: " + priorities[readyF1.get(z)]);
+                if (priorities[readyF1.get(z)] > maxP) {
+                    maxP = priorities[readyF1.get(z)];
+                    maxOp = readyF1.get(z);
                     maxIdx = z;
                 }
             }
