@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.io.IOException;
 import java.io.FileWriter;
 import java.util.Stack;
+import java.util.HashSet;
 
 public class Scheduler {
     public static OpList internalOpList;
@@ -110,7 +111,7 @@ public class Scheduler {
             // at each operation op
             currOp = current.getOperation();
             current.setLine(line);
-            if (currOp != 9) {
+            if (currOp != 9) { // nop
                 Map<Integer, Node> currentEdges = new HashMap<>();
                 // if op defines VRi:
                 if (currOp != 2) { // NOT store
@@ -120,27 +121,23 @@ public class Scheduler {
                         // System.out.println("def is r" + Integer.toString(current.getOperand3()[1]) + " and line is " + Integer.toString(current.getLine()));
                         M[current.getOperand3()[1]] = current;
                     }
-
                 }
                 // for each VRj used in op
                 int useOne = current.getOperand1()[1];
                 // System.out.println("in use 1");
                 if (useOne != -1) {
-                    if (useOne != -1) {
-                        // add an edge from o use to the def node in M(VRj)
-                        defOp = M[useOne];
-                        defLine = defOp.getLine();
-                        defNode = new Node(1, latencies[defOp.getOperation()], 1);
-                        currentEdges.put(defLine, defNode);
-                        // add reverse edge from def node to o use
-                        DG.get(defLine).put(line, new Node(1, latencies[currOp], -1));
-                    }
+                    // add an edge from o use to the def node in M(VRj)
+                    defOp = M[useOne];
+                    defLine = defOp.getLine();
+                    defNode = new Node(1, latencies[defOp.getOperation()], 1);
+                    currentEdges.put(defLine, defNode);
+                    // add reverse edge from def node to o use
+                    DG.get(defLine).put(line, new Node(1, latencies[currOp], -1));
                 }
 
                 int useTwo = current.getOperand2()[1];
                 // System.out.println("in use 2");
                 if (useTwo != -1) {
-                    if (useTwo != -1) {
                         // add an edge from o to the node in M(VRj)
                         defOp = M[useTwo];
                         defLine = defOp.getLine();
@@ -150,22 +147,19 @@ public class Scheduler {
                         // add reverse edge from def node to o use
                         // DG.toString();
                         DG.get(defLine).put(line, new Node(1, latencies[currOp], -1));
-                    }
                 }
 
                 // store
                 if (currOp == 2) {
                     int useThree = current.getOperand3()[1];
                     if (useThree != -1) {
-                        if (useThree != -1) {
-                            // add an edge from o to the node in M(VRj)
-                            defOp = M[useThree];
-                            defLine = defOp.getLine();
-                            defNode = new Node(1, latencies[defOp.getOperation()], 1);
-                            currentEdges.put(defLine, defNode);
-                            // add reverse edge from def node to o use
-                            DG.get(defLine).put(line, new Node(1, latencies[currOp], -1));
-                        }
+                        // add an edge from o to the node in M(VRj)
+                        defOp = M[useThree];
+                        defLine = defOp.getLine();
+                        defNode = new Node(1, latencies[defOp.getOperation()], 1);
+                        currentEdges.put(defLine, defNode);
+                        // add reverse edge from def node to o use
+                        DG.get(defLine).put(line, new Node(1, latencies[currOp], -1));
                     }
                 }
 
@@ -440,7 +434,7 @@ public class Scheduler {
         ArrayList<Integer> readyF1 = new ArrayList<Integer>();
         ArrayList<Integer> readyOutput = new ArrayList<Integer>();
         ArrayList<Integer> readyMisc = new ArrayList<Integer>();
-        ArrayList<Integer> retired = new ArrayList<Integer>();
+        HashSet<Integer> retired = new HashSet<Integer>();
         int[] pickedOps;
         int ready = 1;
 
@@ -468,7 +462,8 @@ public class Scheduler {
             cycle++;
             // System.out.println("The size of active is " + Integer.toString(active.size()));
             // System.out.println(java.util.Arrays.toString(active.get(0)));
-            retiredActive.clear();
+            // retiredActive.clear();
+            retiredActive = new ArrayList<int[]>();
             // find each active operation that retires on this cycle
             for (int a = 0; a < active.size(); a++) {
                 if (active.get(a)[1] == cycle) {
@@ -521,6 +516,7 @@ public class Scheduler {
                 }
             }
         }
+        // System.out.println("Done scheduling at " + Long.toString(System.currentTimeMillis()));
     }
 
     /**
