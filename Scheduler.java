@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.ArrayList;
 import java.io.IOException;
+import java.io.Serial;
 import java.io.FileWriter;
 import java.util.Stack;
 import java.util.HashSet;
@@ -261,7 +262,7 @@ public class Scheduler {
     public static void drawGraph(Map<Integer, Map<Integer, Node>> graph) throws IOException{
         try {
             // create graph file
-            FileWriter graphWriter = new FileWriter("ILOCblock.dot");
+            FileWriter graphWriter = new FileWriter("report04.dot");
             graphWriter.write("digraph slides\n{\n");
             // create Sting to store edges
             String edges = "";
@@ -429,6 +430,7 @@ public class Scheduler {
         // System.out.println("Scheduling at " + Long.toString(System.currentTimeMillis()));
         int cycle = 1;
         ArrayList<int[]> active = new ArrayList<int[]>();
+        HashSet<Integer> activeSet = new HashSet<Integer>();
         ArrayList<int[]> retiredActive = new ArrayList<int[]>();
         ArrayList<Integer> readyF0 = new ArrayList<Integer>();
         ArrayList<Integer> readyF1 = new ArrayList<Integer>();
@@ -456,6 +458,7 @@ public class Scheduler {
             for (int i = 0; i < pickedOps.length; i++) {
                 if(pickedOps[i] != -1) {
                     active.add(new int[] {pickedOps[i], cycle + latencies[DGToIR[pickedOps[i]].getOperation()]});
+                    activeSet.add(pickedOps[i]);
                 }
             }
             // move onto next cycle
@@ -465,7 +468,9 @@ public class Scheduler {
             // retiredActive.clear();
             retiredActive = new ArrayList<int[]>();
             // find each active operation that retires on this cycle
+            // System.out.println("current cycle = " + Integer.toString(cycle));
             for (int a = 0; a < active.size(); a++) {
+                // System.out.println("node " + Integer.toString(active.get(a)[0]) + " with retirement " + Integer.toString(active.get(a)[1]));
                 if (active.get(a)[1] == cycle) {
                     retiredActive.add(active.get(a));
                 }
@@ -482,6 +487,7 @@ public class Scheduler {
                 //     System.out.println(java.util.Arrays.toString(active.get(i)));
                 // }
                 active.remove(retiredActive.get(r));
+                activeSet.remove(retiredActive.get(r)[0]);
                 // System.out.println("Removed " + java.util.Arrays.toString(retiredActive.get(r)));
                 // System.out.println("Active:");
                 // for(int i = 0; i < active.size(); i++) {
@@ -507,14 +513,21 @@ public class Scheduler {
                                 }
                             }
                         }
+                        // System.out.println("eligible node is " + Integer.toString(edgeEntry.getKey()));
+                        // System.out.println("Ready is " + Integer.toString(ready));
+                        // System.out.println("It is " + Boolean.toString(activeSet.contains(edgeEntry.getKey())) + " that it's in the active set");
                         // if the dependent node is ready, then add it to the appropriate ready set
-                        if (ready == 1) {
+                        if (ready == 1 && !activeSet.contains(edgeEntry.getKey())) {
                             // System.out.println("Dependent node " + Integer.toString(edgeEntry.getKey()) + " is ready.");
                             sortOp(edgeEntry.getKey(), readyF0, readyF1, readyOutput, readyMisc);
                         }
                     } 
                 }
             }
+            earlyRelease(activeSet, retired, readyF0, readyF1, readyOutput, readyMisc);
+            // if (cycle == 11) {
+            //     return;
+            // }
         }
         // System.out.println("Done scheduling at " + Long.toString(System.currentTimeMillis()));
     }
@@ -664,6 +677,8 @@ public class Scheduler {
             f0 = "nop";
         } else {
             f0 = DGToIR[pickedOps[0]].printILOCCP1();
+            // System.out.println("choosing " + Integer.toString(pickedOps[0]));
+            // System.out.println("readyF0: " + readyF0.toString());
         }
         if (pickedOps[1] == -1) {
             f1 = "nop";
@@ -672,5 +687,80 @@ public class Scheduler {
         }
         System.out.println("[ " + f0 + "\t; " + f1 + " ]");
         return pickedOps;
+    }
+
+    public static void earlyRelease(HashSet<Integer> activeSet, HashSet<Integer> retired, 
+                                    ArrayList<Integer> readyF0, ArrayList<Integer> readyF1, 
+                                    ArrayList<Integer> readyOutput, ArrayList<Integer> readyMisc) {
+        int ready = 1;
+
+        // need to make active set that updates every time something is added to the active list
+        // early release!
+        // going through all active ops
+        for (int m : activeSet) {
+            // check for load or store
+            if (DGToIR[m].getOperation() == 0 || DGToIR[m].getOperation() == 2) {
+                // System.out.println("Got op " + Integer.toString(m));
+                // see if any op d is waiting on m via a serial edge
+                for(Map.Entry<Integer, Node> edgeEntry : graph.get(m).entrySet()) {
+                    Node d = edgeEntry.getValue();
+                    Integer edgeDirection = d.getDependency();
+                    Integer edgeType = d.getType(); 
+                    if (edgeDirection == -1 && edgeType == 3) { // d depends on m via a serial edge
+                        ready = 1;
+                        // System.out.println("found a serial edge from op " + Integer.toString(edgeEntry.getKey()));
+                        // serial edge from d to m is satisfied
+                        // check all other edges leaving d are satisfied
+                        for (Map.Entry<Integer, Node> otherEdgeEntry : graph.get(edgeEntry.getKey()).entrySet()) {
+                            
+                            // need to see if all edges leaving d are "satisfied"
+                            // what does satisfied even mean??
+                            // satisfied means that forward serialized edges point to issued ops
+                            // satisfied means that data edges are all retired 
+                            // 1. Data in retired?
+                            // 2. Serial in active OR in retired?
+                            // 3. Conflict in retired?
+                            // if the edge is a def
+
+                            // Data edge is retired?
+                            if (otherEdgeEntry.getValue().getDependency() == 1 && otherEdgeEntry.getValue().getType() == 1) {
+                                // System.out.println("Found a def at node " + Integer.toString(otherEdgeEntry.getKey()));
+                                // if the def is NOT retired
+                                // System.out.println("Node " + Integer.toString(otherEdgeEntry.getKey()) + " is a donor");
+                                if (!retired.contains(otherEdgeEntry.getKey())) {
+                                    // System.out.println("Data edge to " + Integer.toString(otherEdgeEntry.getKey()) + " is not retired");
+                                    // then the other node is not ready
+                                    // System.out.println("not ready");
+                                    ready = 0;
+                                    break;
+                                }
+                            }
+                            // Conflict edge in retired?
+                            if (otherEdgeEntry.getValue().getDependency() == 1 && otherEdgeEntry.getValue().getType() == 2) {
+                                if (!retired.contains(otherEdgeEntry.getKey())) {
+                                    // System.out.println("Conflict edge to " + Integer.toString(otherEdgeEntry.getKey()) + " is not retired");
+                                    ready = 0;
+                                    break;
+                                }
+                            }
+                            // Serial edge in active OR retired
+                            if (otherEdgeEntry.getValue().getDependency() == 1 && otherEdgeEntry.getValue().getType() == 3) {
+                                if (!retired.contains(otherEdgeEntry.getKey()) && !activeSet.contains(otherEdgeEntry.getKey())) {
+                                    // System.out.println("Serial edge to " + Integer.toString(otherEdgeEntry.getKey()) + " is either not retired OR not active");
+                                    ready = 0;
+                                    break;
+                                }
+                            }
+                        }
+                        // if the dependent node is ready, then add it to the appropriate ready set
+                        if (ready == 1 && !readyF0.contains(edgeEntry.getKey()) && !readyF1.contains(edgeEntry.getKey()) && !readyOutput.contains(edgeEntry.getKey()) && !readyMisc.contains(edgeEntry.getKey()) && !activeSet.contains(edgeEntry.getKey())) {
+                            // System.out.println("extra extra read all about it, someone got early released!");
+                            // System.out.println("releasing " + Integer.toString(edgeEntry.getKey()));
+                            sortOp(edgeEntry.getKey(), readyF0, readyF1, readyOutput, readyMisc);
+                        }
+                    }
+                }
+            }
+        }
     }
 }
